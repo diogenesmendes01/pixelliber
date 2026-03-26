@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import Image from "next/image";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 export const metadata = {
@@ -8,44 +8,67 @@ export const metadata = {
 export default function EsqueceuSenhaPage() {
   return (
     <>
-      <Header />
-      <main className="flex min-h-screen items-center justify-center px-4 pt-20">
-        <div className="w-full max-w-md">
-          <div className="rounded-lg bg-zinc-900 p-8 shadow-xl">
-            <h4 className="mb-2 text-center text-2xl font-semibold">
-              Recuperar senha
-            </h4>
-            <p className="mb-6 text-center text-sm text-gray-400">
-              Informe seu nome de usuário ou e-mail para redefinir sua senha.
+      <main
+        className="relative flex min-h-screen items-center justify-center px-4"
+        style={{
+          backgroundImage: "url('/bg/covers-ebooks-9363.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Dark overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.8)" }}
+        />
+
+        <div className="relative z-10 w-full" style={{ maxWidth: "400px" }}>
+          {/* Card */}
+          <div
+            style={{
+              backgroundColor: "rgba(0, 0, 1, 0.8)",
+              padding: "80px 20px",
+              borderRadius: "5px",
+            }}
+          >
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
+              <Image
+                src="/Logo-CodeWave-06.png"
+                alt="CodeWave Technologies"
+                width={110}
+                height={24}
+                priority
+                style={{ width: "110px", height: "auto" }}
+              />
+            </div>
+
+            <p
+              className="mb-6 text-center"
+              style={{ color: "#E7D7D7", fontSize: "14px" }}
+            >
+              Digite seu email para recuperar sua senha:
             </p>
 
             <form className="space-y-5">
               <div>
-                <label
-                  htmlFor="user"
-                  className="mb-1 block text-sm text-gray-300"
-                >
-                  Nome de usuário ou endereço de e-mail
-                </label>
                 <input
-                  id="user"
-                  type="text"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  type="email"
+                  placeholder="E-mail..."
+                  className="input-login"
                 />
               </div>
 
-              <button
-                type="submit"
-                className="w-full rounded-md bg-purple-600 py-3 font-semibold text-white transition hover:bg-purple-700"
-              >
-                Recuperar senha
+              <button type="submit" className="btn-gradient w-full py-3">
+                Recuperar Senha
               </button>
             </form>
 
             <div className="mt-4 text-center">
               <a
                 href="/login"
-                className="text-sm text-gray-400 underline transition hover:text-white"
+                style={{ color: "#7F7878", fontSize: "14px" }}
+                className="transition hover:opacity-80"
               >
                 Voltar para o login
               </a>

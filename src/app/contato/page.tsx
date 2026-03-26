@@ -27,7 +27,7 @@ export default function ContatoPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen px-6 pt-28 pb-20">
+      <main className="min-h-screen bg-black px-6 pt-28 pb-20">
         <div className="mx-auto max-w-3xl">
           <h1 className="mb-12 text-center text-3xl font-bold md:text-4xl">
             Entre em contato conosco
@@ -40,10 +40,13 @@ export default function ContatoPage() {
             </h2>
             <div className="space-y-2">
               {faqItems.map((item, index) => (
-                <div key={index} className="rounded-md bg-zinc-800">
+                <div
+                  key={index}
+                  style={{ backgroundColor: "#252525", borderRadius: "5px" }}
+                >
                   <button
                     onClick={() => toggle(index)}
-                    className="flex w-full items-center justify-between px-6 py-4 text-left text-lg font-medium transition hover:bg-zinc-700"
+                    className="flex w-full items-center justify-between px-6 py-4 text-left text-lg font-medium transition hover:opacity-80"
                   >
                     <span>{item.question}</span>
                     <svg
@@ -62,7 +65,7 @@ export default function ContatoPage() {
                     </svg>
                   </button>
                   {openIndex === index && (
-                    <div className="px-6 pb-4 text-gray-300">
+                    <div className="px-6 pb-4" style={{ color: "#C4BBBB" }}>
                       <p>{item.answer}</p>
                     </div>
                   )}
@@ -72,22 +75,29 @@ export default function ContatoPage() {
           </div>
 
           {/* Contato */}
-          <div className="rounded-lg bg-zinc-900 p-8">
+          <div
+            style={{
+              backgroundColor: "#252525",
+              borderRadius: "15px",
+              padding: "40px",
+            }}
+          >
             <h2 className="mb-6 text-2xl font-semibold">Contato</h2>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-purple-400"
+                  className="h-5 w-5"
                   viewBox="0 0 20 20"
-                  fill="currentColor"
+                  fill="#57E4FF"
                 >
                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
                 <a
                   href="mailto:financeiro@codewavetechnologies.com.br"
-                  className="text-gray-300 transition hover:text-white"
+                  style={{ color: "#C4BBBB" }}
+                  className="transition hover:text-white"
                 >
                   financeiro@codewavetechnologies.com.br
                 </a>
@@ -104,7 +114,8 @@ export default function ContatoPage() {
                   href="https://wa.me/5519971273953"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-300 transition hover:text-white"
+                  style={{ color: "#C4BBBB" }}
+                  className="transition hover:text-white"
                 >
                   (19) 97127-3953
                 </a>

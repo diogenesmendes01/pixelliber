@@ -1,63 +1,79 @@
-import Header from "@/components/Header";
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
-export const metadata = {
-  title: "Entrar — CodeWave Technologies",
-};
-
 export default function LoginPage() {
+  const [rememberMe, setRememberMe] = useState(false);
+
   return (
     <>
-      <Header />
-      <main className="flex min-h-screen items-center justify-center px-4 pt-20">
-        <div className="w-full max-w-md">
-          <div className="rounded-lg bg-zinc-900 p-8 shadow-xl">
-            <h4 className="mb-6 text-center text-2xl font-semibold">Entrar</h4>
+      <main
+        className="relative flex min-h-screen items-center justify-center px-4"
+        style={{
+          backgroundImage: "url('/bg/covers-ebooks-9363.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Dark overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.8)" }}
+        />
+
+        <div className="relative z-10 w-full" style={{ maxWidth: "400px" }}>
+          {/* Login card */}
+          <div
+            style={{
+              backgroundColor: "rgba(0, 0, 1, 0.8)",
+              padding: "80px 20px",
+              borderRadius: "5px",
+            }}
+          >
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
+              <Image
+                src="/Logo-CodeWave-06.png"
+                alt="CodeWave Technologies"
+                width={110}
+                height={24}
+                priority
+                style={{ width: "110px", height: "auto" }}
+              />
+            </div>
 
             <form className="space-y-5">
               <div>
-                <label
-                  htmlFor="username"
-                  className="mb-1 block text-sm text-gray-300"
-                >
-                  Nome de usuário ou endereço de e-mail
-                </label>
                 <input
-                  id="username"
                   type="text"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="CNPJ"
+                  className="input-login"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="password"
-                  className="mb-1 block text-sm text-gray-300"
-                >
-                  Senha
-                </label>
                 <input
-                  id="password"
                   type="password"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="Senha"
+                  className="input-login"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-purple-500 focus:ring-purple-500"
+              <div className="flex items-center gap-3">
+                <div
+                  className={`toggle-switch ${rememberMe ? "active" : ""}`}
+                  onClick={() => setRememberMe(!rememberMe)}
+                  role="switch"
+                  aria-checked={rememberMe}
                 />
-                <label htmlFor="remember" className="text-sm text-gray-300">
-                  Lembrar-me
-                </label>
+                <span style={{ color: "#E7D7D7", fontSize: "14px" }}>
+                  Mantenha-me logado
+                </span>
               </div>
 
-              <button
-                type="submit"
-                className="w-full rounded-md bg-purple-600 py-3 font-semibold text-white transition hover:bg-purple-700"
-              >
+              <button type="submit" className="btn-gradient w-full py-3">
                 Entrar
               </button>
             </form>
@@ -65,17 +81,35 @@ export default function LoginPage() {
             <div className="mt-4 text-center">
               <a
                 href="/esqueceu-senha"
-                className="text-sm text-gray-400 underline transition hover:text-white"
+                style={{ color: "#7F7878", fontSize: "14px" }}
+                className="transition hover:opacity-80"
               >
-                Esqueceu a senha?
+                Esqueceu sua senha?
               </a>
             </div>
           </div>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Dica: Se esse é o seu primeiro acesso, use o seu CNPJ para o usuário
-            e senha.*
-          </p>
+          {/* CNPJ hint card */}
+          <div
+            className="mt-4"
+            style={{
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              borderRadius: "10px",
+              padding: "20px",
+            }}
+          >
+            <p
+              style={{
+                color: "#E7D7D7",
+                fontSize: "14px",
+                textAlign: "center",
+                lineHeight: "1.6",
+              }}
+            >
+              Dica: Se esse é o seu primeiro acesso, use o seu CNPJ para o
+              usuário e senha.*
+            </p>
+          </div>
         </div>
       </main>
       <WhatsAppButton />

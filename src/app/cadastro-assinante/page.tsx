@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import Image from "next/image";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 export const metadata = {
@@ -8,100 +8,96 @@ export const metadata = {
 export default function CadastroAssinantePage() {
   return (
     <>
-      <Header />
-      <main className="flex min-h-screen items-center justify-center px-4 pt-20 pb-20">
-        <div className="w-full max-w-lg">
-          <div className="rounded-lg bg-zinc-900 p-8 shadow-xl">
-            <h4 className="mb-6 text-center text-2xl font-semibold">
+      <main
+        className="relative flex min-h-screen items-center justify-center px-4 py-20"
+        style={{
+          backgroundImage: "url('/bg/covers-ebooks-9363.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Dark overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.8)" }}
+        />
+
+        <div className="relative z-10 w-full" style={{ maxWidth: "450px" }}>
+          <div
+            style={{
+              backgroundColor: "rgba(0, 0, 1, 0.8)",
+              padding: "60px 20px",
+              borderRadius: "5px",
+            }}
+          >
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
+              <Image
+                src="/Logo-CodeWave-06.png"
+                alt="CodeWave Technologies"
+                width={110}
+                height={24}
+                priority
+                style={{ width: "110px", height: "auto" }}
+              />
+            </div>
+
+            <h4
+              className="mb-6 text-center text-2xl font-semibold"
+              style={{ color: "#E7D7D7" }}
+            >
               Cadastro de Assinante
             </h4>
 
             <form className="space-y-5">
               <div>
-                <label
-                  htmlFor="nome"
-                  className="mb-1 block text-sm text-gray-300"
-                >
-                  Nome completo
-                </label>
                 <input
-                  id="nome"
                   type="text"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="Nome completo"
+                  className="input-cadastro"
                 />
               </div>
-
               <div>
-                <label
-                  htmlFor="email"
-                  className="mb-1 block text-sm text-gray-300"
-                >
-                  E-mail
-                </label>
                 <input
-                  id="email"
                   type="email"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="E-mail"
+                  className="input-cadastro"
                 />
               </div>
-
               <div>
-                <label
-                  htmlFor="cnpj"
-                  className="mb-1 block text-sm text-gray-300"
-                >
-                  CNPJ
-                </label>
                 <input
-                  id="cnpj"
                   type="text"
-                  placeholder="00.000.000/0000-00"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="CNPJ"
+                  className="input-cadastro"
                 />
               </div>
-
               <div>
-                <label
-                  htmlFor="senha"
-                  className="mb-1 block text-sm text-gray-300"
-                >
-                  Senha
-                </label>
                 <input
-                  id="senha"
                   type="password"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="Senha"
+                  className="input-cadastro"
                 />
               </div>
-
               <div>
-                <label
-                  htmlFor="confirmar-senha"
-                  className="mb-1 block text-sm text-gray-300"
-                >
-                  Confirmar senha
-                </label>
                 <input
-                  id="confirmar-senha"
                   type="password"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="Confirmar senha"
+                  className="input-cadastro"
                 />
               </div>
 
-              <button
-                type="submit"
-                className="w-full rounded-md bg-purple-600 py-3 font-semibold text-white transition hover:bg-purple-700"
-              >
+              <button type="submit" className="btn-gradient w-full py-3">
                 Cadastrar
               </button>
             </form>
 
             <div className="mt-4 text-center">
-              <span className="text-sm text-gray-400">
+              <span style={{ color: "#7F7878", fontSize: "14px" }}>
                 Já tem uma conta?{" "}
                 <a
                   href="/login"
-                  className="text-white underline transition hover:text-gray-300"
+                  style={{ color: "#57E4FF" }}
+                  className="transition hover:opacity-80"
                 >
                   Entrar
                 </a>
