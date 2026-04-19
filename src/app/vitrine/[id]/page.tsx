@@ -123,7 +123,7 @@ export default function VitrineDetailPage() {
               {/* Action buttons */}
               <div className="mt-6 flex flex-col gap-3">
                 <a
-                  href={ebook.pdf}
+                  href={`/api/ebooks/${id}/pdf`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-semibold transition hover:opacity-90"
@@ -149,7 +149,7 @@ export default function VitrineDetailPage() {
                   Ler Agora
                 </a>
                 <a
-                  href={ebook.pdf}
+                  href={`/api/ebooks/${id}/pdf`}
                   download
                   className="flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-semibold transition hover:opacity-90"
                   style={{
