@@ -83,6 +83,16 @@ export default function ContatoPage() {
             }}
           >
             <h2 className="mb-6 text-2xl font-semibold">Contato</h2>
+            <div
+              className="mt-8 pt-6"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              <p style={{ color: "#9A9A9A", fontSize: "13px" }}>
+                <strong style={{ color: "#D4AF37" }}>PIXEL LIBER DIGITAL LTDA</strong>
+                <br />
+                CNPJ: 54.027.018/0001-06
+              </p>
+            </div>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <svg
@@ -95,11 +105,11 @@ export default function ContatoPage() {
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
                 <a
-                  href="mailto:financeiro@codewavetechnologies.com.br"
+                  href="mailto:financeiro@pixelliberdigital.com"
                   style={{ color: "#C4BBBB" }}
                   className="transition hover:text-white"
                 >
-                  financeiro@codewavetechnologies.com.br
+                  financeiro@pixelliberdigital.com
                 </a>
               </div>
               <div className="flex items-center gap-3">
