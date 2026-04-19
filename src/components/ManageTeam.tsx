@@ -110,7 +110,7 @@ export default function ManageTeam() {
   }
 
   function startResetPwd(emp: Employee) {
-    const newPassword = Math.random().toString(36).slice(-8);
+    const newPassword = crypto.randomUUID().slice(0, 8);
     fetch(`/api/employees/${emp.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
