@@ -7,8 +7,8 @@ export default function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/">
           <Image
-            src="/Logo-CodeWave-06.png"
-            alt="CodeWave Technologies"
+            src="/logo/horizontal/horizontal-200x40.png"
+            alt="Pixel Liber"
             width={180}
             height={40}
             priority

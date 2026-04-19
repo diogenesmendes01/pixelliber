@@ -10,18 +10,18 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "CodeWave Technologies — E-books sem limites",
+  title: "Pixel Liber — E-books sem limites",
   description:
     "Veja e baixe diversos e-books, sem limites. Leia onde quiser, quando quiser.",
   icons: {
-    icon: "/cropped-Logo-CodeWave_Favicon-32x32.png",
+    icon: "/logo/vertical/vertical-dark.png",
   },
   openGraph: {
-    title: "CodeWave Technologies — E-books sem limites",
+    title: "Pixel Liber — E-books sem limites",
     description:
       "Veja e baixe diversos e-books, sem limites. Leia onde quiser, quando quiser.",
-    url: "https://codewavetechnologies.com.br",
-    siteName: "CodeWave Technologies",
+    url: "https://pixelliberdigital.com",
+    siteName: "Pixel Liber",
     locale: "pt_BR",
     type: "website",
   },

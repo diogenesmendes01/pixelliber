@@ -2,7 +2,7 @@ import Image from "next/image";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 export const metadata = {
-  title: "Cadastro de Assinante — CodeWave Technologies",
+  title: "Cadastro de Assinante — Pixel Liber",
 };
 
 export default function CadastroAssinantePage() {
@@ -33,9 +33,9 @@ export default function CadastroAssinantePage() {
             {/* Logo */}
             <div className="mb-8 flex justify-center">
               <Image
-                src="/Logo-CodeWave-06.png"
-                alt="CodeWave Technologies"
-                width={110}
+                src="/logo/horizontal/horizontal-640x128.png"
+                alt="Pixel Liber"
+                width={140}
                 height={24}
                 priority
                 style={{ width: "110px", height: "auto" }}

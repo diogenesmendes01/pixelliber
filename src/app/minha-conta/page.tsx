@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 export const metadata = {
-  title: "Minha Conta — CodeWave Technologies",
+  title: "Minha Conta — Pixel Liber",
 };
 
 export default function MinhaContaPage() {
