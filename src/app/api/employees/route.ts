@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 
 export async function GET() {
   const session = await auth();
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const password = initialPassword || Math.random().toString(36).slice(-8);
+  const password = initialPassword || randomUUID().slice(0, 8);
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
