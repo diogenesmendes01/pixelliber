@@ -66,7 +66,29 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  // Fail loudly in production if NEXTAUTH_SECRET is not set
+  secret: (() => {
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      // Allow build time without secret; warn but don't break build
+      if (process.env.NODE_ENV === "production") {
+        console.error("[auth] NEXTAUTH_SECRET is not set — authentication will not work properly!");
+      }
+      return undefined;
+    }
+    return secret;
+  })(),
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      },
+    },
+  },
   session: { strategy: "jwt" },
 };
 
