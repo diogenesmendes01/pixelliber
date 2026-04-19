@@ -105,11 +105,11 @@ export default function ContatoPage() {
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
                 <a
-                  href="mailto:financeiro@pixelliberdigital.com"
+                  href="mailto:contato@pixelliberdigital.com"
                   style={{ color: "#C4BBBB" }}
                   className="transition hover:text-white"
                 >
-                  financeiro@pixelliberdigital.com
+                  contato@pixelliberdigital.com
                 </a>
               </div>
               <div className="flex items-center gap-3">
