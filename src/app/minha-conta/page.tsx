@@ -1,13 +1,19 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import ManageTeam from "@/components/ManageTeam";
+import { auth } from "@/lib/auth";
 
 export const metadata = {
   title: "Minha Conta — Pixel Liber",
 };
 
-export default function MinhaContaPage() {
+export default async function MinhaContaPage() {
+  const session = await auth();
+  const isAdmin = (session?.user as any)?.role === "ADMIN";
+
   return (
     <>
       <Header />
@@ -79,6 +85,9 @@ export default function MinhaContaPage() {
               <button className="btn-blue">Salvar alterações</button>
             </div>
           </div>
+
+          {/* Team Management — Admin only */}
+          {isAdmin && <ManageTeam />}
         </div>
       </main>
       <WhatsAppButton />
