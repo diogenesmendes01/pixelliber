@@ -42,6 +42,9 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# Private PDF storage (serve via protected API route only)
+/private/pdfs/*.pdf
+
 # SQLite databases
 *.db
 prisma/dev.db
