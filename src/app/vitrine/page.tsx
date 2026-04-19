@@ -6,31 +6,31 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { useRef } from "react";
 
 const populares = [
-  { title: "Pai rico, Pai pobre", cover: "/ebooks/pai-rico-pai-pobre.jpg" },
-  { title: "A felicidade começa com você", cover: "/ebooks/livros-mais-vendidos-em-2022.jpg" },
-  { title: "Autoridade no Youtube", cover: "/ebooks/Autoridade-no-Youtube-1.jpg" },
-  { title: "Sucesso os negocios de coaching", cover: "/ebooks/sucesso-os-negocios-de-coaching-1.jpg" },
-  { title: "COPYWRINTING destruindo objeções", cover: "/ebooks/COPYWRINTING-destruindo-objeções-1.jpg" },
-  { title: "Como parar de se preocupar", cover: "/ebooks/Como-parar-de-se-preocupar-com-que-as-pessoas-pensam-sobre-você-1.jpg" },
-  { title: "Do ponto zero a conversão", cover: "/ebooks/Do-ponto-zero-a-conversão-1.jpg" },
-  { title: "10 maneiras de atrair", cover: "/ebooks/10-maneiras-de-atrair-as-coisas-que-você-realmente-deseja-na-sua-vida-1.jpg" },
-  { title: "Segredo da persuasão", cover: "/ebooks/Segredo-da-persuasão-1.jpg" },
-  { title: "Controlando a Ansiedade", cover: "/ebooks/Controlando-a-Ansiedade-1.jpg" },
+  { id: "pai-rico-pai-pobre", title: "Pai rico, Pai pobre", cover: "/ebooks/pai-rico-pai-pobre.jpg" },
+  { id: "a-felicidade-comeca-com-voce", title: "A felicidade começa com você", cover: "/ebooks/livros-mais-vendidos-em-2022.jpg" },
+  { id: "autoridade-no-youtube", title: "Autoridade no Youtube", cover: "/ebooks/Autoridade-no-Youtube-1.jpg" },
+  { id: "sucesso-os-negocios-de-coaching", title: "Sucesso os negocios de coaching", cover: "/ebooks/sucesso-os-negocios-de-coaching-1.jpg" },
+  { id: "copywriting-destruindo-objecoes", title: "COPYWRINTING destruindo objeções", cover: "/ebooks/COPYWRINTING-destruindo-objeções-1.jpg" },
+  { id: "como-parar-de-se-preocupar", title: "Como parar de se preocupar", cover: "/ebooks/Como-parar-de-se-preocupar-com-que-as-pessoas-pensam-sobre-você-1.jpg" },
+  { id: "do-ponto-zero-a-conversao", title: "Do ponto zero a conversão", cover: "/ebooks/Do-ponto-zero-a-conversão-1.jpg" },
+  { id: "10-maneiras-de-atrair", title: "10 maneiras de atrair", cover: "/ebooks/10-maneiras-de-atrair-as-coisas-que-você-realmente-deseja-na-sua-vida-1.jpg" },
+  { id: "segredo-da-persuasao", title: "Segredo da persuasão", cover: "/ebooks/Segredo-da-persuasão-1.jpg" },
+  { id: "controlando-a-ansiedade", title: "Controlando a Ansiedade", cover: "/ebooks/Controlando-a-Ansiedade-1.jpg" },
 ];
 
 const baixados = [
-  { title: "ORGANIZZE Saia do vermelho", cover: "/ebooks/ORGANIZZE-Saia-do-vermelho.jpg" },
-  { title: "Desenvolva seu QI financeiro", cover: "/ebooks/Desenvolva-seu-QI-financeiro.jpg" },
-  { title: "Encontrando Dinheiro", cover: "/ebooks/Encontrando-Dinheiro.jpg" },
-  { title: "Extração de dinheiro", cover: "/ebooks/Extração-de-dinheiro.png" },
-  { title: "Liberte o gigante financeiro interior", cover: "/ebooks/Liberte-o-gigante-financeiro-interior.png" },
-  { title: "O poder do dinheiro extra", cover: "/ebooks/Dinheiro-o-poder-do-dinheiro-extra.jpg" },
-  { title: "Tiktok Marketing", cover: "/ebooks/Tiktok-Marketing-como-o-usar-o-poder-do-1.jpg" },
-  { title: "Orçamento Familiar", cover: "/ebooks/Orçamento-Familiar.png" },
-  { title: "101 Maneiras de investir na bolsa", cover: "/ebooks/101-Maneiras-de-investir-na-bolsa.png" },
+  { id: "organizze-saia-do-vermelho", title: "ORGANIZZE Saia do vermelho", cover: "/ebooks/ORGANIZZE-Saia-do-vermelho.jpg" },
+  { id: "desenvolva-seu-qi-financeiro", title: "Desenvolva seu QI financeiro", cover: "/ebooks/Desenvolva-seu-QI-financeiro.jpg" },
+  { id: "encontrando-dinheiro", title: "Encontrando Dinheiro", cover: "/ebooks/Encontrando-Dinheiro.jpg" },
+  { id: "extracao-de-dinheiro", title: "Extração de dinheiro", cover: "/ebooks/Extração-de-dinheiro.png" },
+  { id: "liberte-o-gigante-financeiro-interior", title: "Liberte o gigante financeiro interior", cover: "/ebooks/Liberte-o-gigante-financeiro-interior.png" },
+  { id: "o-poder-do-dinheiro-extra", title: "O poder do dinheiro extra", cover: "/ebooks/Dinheiro-o-poder-do-dinheiro-extra.jpg" },
+  { id: "tiktok-marketing", title: "Tiktok Marketing", cover: "/ebooks/Tiktok-Marketing-como-o-usar-o-poder-do-1.jpg" },
+  { id: "orcamento-familiar", title: "Orçamento Familiar", cover: "/ebooks/Orçamento-Familiar.png" },
+  { id: "101-maneiras-de-investir-na-bolsa", title: "101 Maneiras de investir na bolsa", cover: "/ebooks/101-Maneiras-de-investir-na-bolsa.png" },
 ];
 
-function EbookCarousel({ books }: { books: { title: string; cover: string }[] }) {
+function EbookCarousel({ books }: { books: { id: string; title: string; cover: string }[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -53,8 +53,9 @@ function EbookCarousel({ books }: { books: { title: string; cover: string }[] })
 
       <div ref={scrollRef} className="carousel-scroll">
         {books.map((book, i) => (
-          <div
+          <Link
             key={i}
+            href={`/vitrine/${book.id}`}
             className="ebook-card"
             style={{
               width: "calc((100% - 60px) / 6)",
@@ -70,7 +71,7 @@ function EbookCarousel({ books }: { books: { title: string; cover: string }[] })
                 sizes="200px"
               />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
