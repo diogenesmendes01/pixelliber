@@ -16,6 +16,11 @@ model Company {
   cnpj      String?  @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Subscription fields
+  dataAssinatura    DateTime?
+  statusAssinatura  String    @default("inativa") // "ativa" | "inativa"
+
   employees Employee[]
   users     User[]
 }
