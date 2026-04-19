@@ -25,7 +25,7 @@ export default function MinhaContaPage() {
               />
               <span className="font-semibold text-sm">Vitrine</span>
             </Link>
-            <Link href="/minha-conta" className="action-card" style={{ border: "2px solid #57E4FF" }}>
+            <Link href="/minha-conta" className="action-card" style={{ border: "2px solid #D4AF37" }}>
               <Image
                 src="/icons/user.svg"
                 alt="Minha Conta"

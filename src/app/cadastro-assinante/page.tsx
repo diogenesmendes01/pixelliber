@@ -96,7 +96,7 @@ export default function CadastroAssinantePage() {
                 Já tem uma conta?{" "}
                 <a
                   href="/login"
-                  style={{ color: "#57E4FF" }}
+                  style={{ color: "#D4AF37" }}
                   className="transition hover:opacity-80"
                 >
                   Entrar
