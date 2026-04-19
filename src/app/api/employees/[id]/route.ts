@@ -56,7 +56,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: employee.userId },
-      data: { password: hashed },
+      data: { passwordHash: hashed },
     });
     return NextResponse.json({ employee: updated, tempPassword: newPassword });
   }

@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: fullName,
       email: corporateEmail,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       role: "USER",
       companyId,
     },

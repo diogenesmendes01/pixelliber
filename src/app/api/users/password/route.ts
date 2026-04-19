@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const isValid = await bcrypt.compare(currentPassword, user.password);
+  const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!isValid) {
     return NextResponse.json(
       { error: "Senha atual incorreta" },
@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest) {
   const hashed = await bcrypt.hash(newPassword, 10);
   await prisma.user.update({
     where: { id: userId },
-    data: { password: hashed },
+    data: { passwordHash: hashed },
   });
 
   return NextResponse.json({ success: true });
