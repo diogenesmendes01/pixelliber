@@ -24,7 +24,7 @@ export default function FAQ() {
   };
 
   return (
-    <section className="bg-black px-6 py-20">
+    <section className="bg-[#121212] px-6 py-20">
       <div className="mx-auto max-w-3xl">
         <h2 className="mb-10 text-center text-3xl font-bold md:text-4xl">
           Dúvidas mais frequentes

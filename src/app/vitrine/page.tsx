@@ -115,7 +115,7 @@ export default function VitrinePage() {
         </div>
       </header>
 
-      <main className="min-h-screen bg-black">
+      <main className="min-h-screen bg-[#121212]">
         {/* Video Banner */}
         <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
           <video

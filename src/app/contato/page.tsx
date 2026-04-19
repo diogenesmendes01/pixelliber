@@ -27,7 +27,7 @@ export default function ContatoPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-black px-6 pt-28 pb-20">
+      <main className="min-h-screen bg-[#121212] px-6 pt-28 pb-20">
         <div className="mx-auto max-w-3xl">
           <h1 className="mb-12 text-center text-3xl font-bold md:text-4xl">
             Entre em contato conosco

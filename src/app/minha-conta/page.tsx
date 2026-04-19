@@ -11,7 +11,7 @@ export default function MinhaContaPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-black pt-24 pb-20">
+      <main className="min-h-screen bg-[#121212] pt-24 pb-20">
         <div className="mx-auto max-w-4xl px-6">
           {/* 3 Action Cards */}
           <div className="grid grid-cols-3 gap-4 mb-10">

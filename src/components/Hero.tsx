@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="flex min-h-screen flex-col items-center justify-center bg-black px-6 pt-20 text-center">
+    <section className="flex min-h-screen flex-col items-center justify-center bg-[#121212] px-6 pt-20 text-center">
       <h1 className="max-w-3xl text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">
         Veja e baixe diversos e-books, sem limites
       </h1>
@@ -14,7 +14,7 @@ export default function Hero() {
       </p>
       <Link
         href="/login"
-        className="mt-8 inline-flex items-center gap-2 rounded-md bg-red-600 px-8 py-3 text-lg font-semibold text-white transition hover:bg-red-700"
+        className="mt-8 inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-[#D4AF37] to-[#C9A227] px-8 py-3 text-lg font-semibold text-white transition brightness-110"
       >
         Vamos ler
         <svg

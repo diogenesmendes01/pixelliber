@@ -11,7 +11,7 @@ export default function CadastroAssinantePage() {
       <main
         className="relative flex min-h-screen items-center justify-center px-4 py-20"
         style={{
-          backgroundImage: "url('/bg/covers-ebooks-9363.jpg')",
+          backgroundImage: "url('/bg/CAPA-AREA-DE-MEMBROS-GCSArtboard-1.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -25,7 +25,7 @@ export default function CadastroAssinantePage() {
         <div className="relative z-10 w-full" style={{ maxWidth: "450px" }}>
           <div
             style={{
-              backgroundColor: "rgba(0, 0, 1, 0.8)",
+              backgroundColor: "rgba(18, 18, 18, 0.85)",
               padding: "60px 20px",
               borderRadius: "5px",
             }}

@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default function DownloadSection() {
   return (
-    <section className="bg-zinc-900 px-6 py-20">
+    <section className="bg-[#1a1a1a] px-6 py-20">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 md:flex-row">
         <div className="relative flex flex-1 items-center justify-center">
           <Image

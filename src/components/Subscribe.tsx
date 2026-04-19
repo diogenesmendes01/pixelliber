@@ -3,12 +3,12 @@ import Link from "next/link";
 
 export default function Subscribe() {
   return (
-    <section className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 px-6 py-20">
+    <section className="bg-[#121212] px-6 py-20">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 md:flex-row">
         <div className="flex-1">
           <Image
-            src="/quero-assinar.png"
-            alt="Quero assinar"
+            src="/logo/vertical/vertical-dark.png"
+            alt="Pixel Liber - Quero assinar"
             width={601}
             height={496}
             className="mx-auto w-full max-w-md rounded-lg"
@@ -23,7 +23,7 @@ export default function Subscribe() {
           </p>
           <Link
             href="/contato"
-            className="mt-6 inline-flex items-center gap-2 rounded-md bg-red-600 px-8 py-3 text-lg font-semibold text-white transition hover:bg-red-700"
+            className="mt-6 inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-[#D4AF37] to-[#C9A227] px-8 py-3 text-lg font-semibold text-white transition brightness-110"
           >
             Quero assinar!
             <svg
