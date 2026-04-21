@@ -1,13 +1,53 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import ManageTeam from "@/components/ManageTeam";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import AccountForm from "@/components/AccountForm";
 
 export const metadata = {
   title: "Minha Conta — Pixel Liber",
 };
 
-export default function MinhaContaPage() {
+async function getUserData(session: any) {
+  const userId = (session.user as any).id;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { company: true },
+  });
+  if (!user) return null;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    assinaturaAtiva: user.company?.statusAssinatura === "ativa",
+    company: user.company
+      ? {
+          name: user.company.name,
+          cnpj: user.company.cnpj,
+          statusAssinatura: user.company.statusAssinatura,
+        }
+      : null,
+  };
+}
+
+export default async function MinhaContaPage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const user = await getUserData(session);
+  if (!user) {
+    redirect("/login");
+  }
+
+  const isAdmin = (session.user as any).role === "ADMIN";
+
   return (
     <>
       <Header />
@@ -47,38 +87,20 @@ export default function MinhaContaPage() {
             </Link>
           </div>
 
-          {/* Account Section */}
+          {/* Account Header */}
           <div className="account-section">
             <h2 className="text-2xl font-bold mb-2">Minha Conta</h2>
             <p className="text-gray-300 mb-8">
               Esse é o painel da sua conta. Aqui você pode acessar a vitrine de
               e-books, gerenciar suas informações e acompanhar sua assinatura.
             </p>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Nome completo</label>
-                <input type="text" placeholder="Seu nome" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">E-mail</label>
-                <input type="email" placeholder="Seu e-mail" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Senha atual (deixe em branco para não alterar)</label>
-                <input type="password" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Nova senha (deixe em branco para não alterar)</label>
-                <input type="password" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Confirmar nova senha</label>
-                <input type="password" />
-              </div>
-              <button className="btn-blue">Salvar alterações</button>
-            </div>
           </div>
+
+          {/* Account Form — interactive client component */}
+          <AccountForm user={user} />
+
+          {/* Team Management — Admin only */}
+          {isAdmin && <ManageTeam />}
         </div>
       </main>
       <WhatsAppButton />
