@@ -7,14 +7,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const ebookId = parseInt(id, 10);
-
-    if (isNaN(ebookId)) {
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-    }
-
     const ebook = await prisma.ebook.findUnique({
-      where: { id: ebookId },
+      where: { id },
     });
 
     if (!ebook) {

@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
     });
 
     const populares = await prisma.ebook.findMany({
-      where: { destaque: true },
       orderBy: { contadorDownloads: "desc" },
       take: 10,
     });

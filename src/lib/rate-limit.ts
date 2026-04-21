@@ -51,3 +51,26 @@ export function getRateLimitResponse(resetAt: number): NextResponse {
     }
   );
 }
+
+const EMAIL_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const EMAIL_MAX_ATTEMPTS = 3;
+
+export function isRateLimited(email: string): boolean {
+  const now = Date.now();
+  const key = `email:${email}`;
+  
+  const entry = rateLimitStore.get(key);
+  
+  if (!entry || now > entry.resetAt) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + EMAIL_WINDOW_MS });
+    return false;
+  }
+  
+  if (entry.count >= EMAIL_MAX_ATTEMPTS) {
+    return true;
+  }
+  
+  entry.count++;
+  rateLimitStore.set(key, entry);
+  return false;
+}

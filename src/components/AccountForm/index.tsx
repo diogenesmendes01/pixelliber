@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { signOut } from "next-auth/react";
+
 import Image from "next/image";
 import Link from "next/link";
 
 interface UserData {
   id: string;
-  name: string;
-  email: string;
+  name: string | null;
+  email: string | null;
   role: string;
   assinaturaAtiva: boolean;
   company: {
@@ -23,8 +23,8 @@ interface AccountFormProps {
 }
 
 export default function AccountForm({ user }: AccountFormProps) {
-  const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
+  const [name, setName] = useState(user.name || "");
+  const [email, setEmail] = useState(user.email || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -101,7 +101,8 @@ export default function AccountForm({ user }: AccountFormProps) {
   }
 
   async function handleLogout() {
-    await signOut({ callbackUrl: "/login" });
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
   }
 
   return (

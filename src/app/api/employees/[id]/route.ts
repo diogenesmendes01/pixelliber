@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
@@ -59,7 +59,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
   });
 
   if (resetPassword && employee.userId) {
-    const newPassword = randomUUID().replace(/-/g, "").slice(0, 8);
+    const newPassword = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: employee.userId },

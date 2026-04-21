@@ -42,3 +42,11 @@ export async function getTokenFromCookies(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get("auth_token")?.value ?? null;
 }
+
+export async function auth(): Promise<{ user: JWTPayload } | null> {
+  const token = await getTokenFromCookies();
+  if (!token) return null;
+  const payload = await verifyToken(token);
+  if (!payload) return null;
+  return { user: payload };
+}

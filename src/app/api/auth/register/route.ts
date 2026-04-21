@@ -72,8 +72,7 @@ export async function POST(request: NextRequest) {
         cnpj: cleanCnpj,
         name,
         email,
-        passwordHash,
-        users: {
+        user: {
           create: {
             name,
             email,
@@ -83,7 +82,7 @@ export async function POST(request: NextRequest) {
         },
       },
       include: {
-        users: true,
+        user: true,
       },
     });
 

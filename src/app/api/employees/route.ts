@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
-import { randomUUID } from "crypto";
+
 import { validateCsrfRequest } from "@/lib/csrf";
 
 export async function GET() {
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const password = initialPassword || randomUUID().replace(/-/g, "").slice(0, 8);
+  const password = initialPassword || crypto.randomUUID().replace(/-/g, "").slice(0, 8);
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
