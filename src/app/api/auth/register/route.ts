@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateCNPJ, cleanCNPJ } from "@/lib/cnpj";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -64,17 +65,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const passwordHash = await bcrypt.hash(password, 10);
+
     const company = await prisma.company.create({
       data: {
         cnpj: cleanCnpj,
         name,
         email,
-        password,
+        passwordHash,
         users: {
           create: {
             name,
             email,
-            password,
+            passwordHash,
             role: "admin",
           },
         },
