@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateResetToken, invalidateToken, logRecoveryAttempt } from "@/lib/token-store";
 import { isRateLimited } from "@/lib/rate-limit";
+import { updateUserPassword } from "@/lib/user-store";
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,8 +58,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In production: update password in database here
-    // await db.user.update({ where: { email }, data: { password: hash(newPassword) } })
+    // Update password in user store (file-based for dev; replace with DB in production)
+    await updateUserPassword(email, newPassword);
 
     // Invalidate token (single use)
     invalidateToken(token);
