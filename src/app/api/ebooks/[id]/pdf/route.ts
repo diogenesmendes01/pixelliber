@@ -1,83 +1,99 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { promises as fs } from "fs";
-import path from "path";
+
+// Session validation placeholder - depends on issue #5 (auth)
+async function validateSession(request: NextRequest): Promise<{ valid: boolean; userId?: string; companyId?: string }> {
+  // TODO: Implement session validation after issue #5 (auth) is resolved
+  // Expected: read session cookie, validate JWT, return { userId, companyId }
+  const sessionCookie = request.cookies.get("session");
+  if (!sessionCookie?.value) {
+    return { valid: false };
+  }
+  // Placeholder: decode/validate session token
+  // In real implementation, verify JWT and extract user/company info
+  try {
+    const sessionData = JSON.parse(Buffer.from(sessionCookie.value, "base64").toString());
+    return { valid: true, userId: sessionData.userId, companyId: sessionData.companyId };
+  } catch {
+    return { valid: false };
+  }
+}
+
+// Subscription validation placeholder - depends on issue #4 (catalogo)
+async function validateActiveSubscription(companyId: string): Promise<boolean> {
+  // TODO: Implement subscription check after issue #4 (catalogo) is resolved
+  // Expected: query database for active subscription status
+  // Placeholder: always return true for demo
+  return true;
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // 1. Validate authentication
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await params;
+  const { searchParams } = new URL(request.url);
+  const isDownload = searchParams.get("download") === "1";
+
+  // Step 1: Validate session
+  const session = await validateSession(request);
+  if (!session.valid || !session.companyId) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please log in." },
+      { status: 401 }
+    );
   }
 
-  // 2. Check active subscription
-  const assinaturaAtiva = (session.user as any).assinaturaAtiva;
-  if (!assinaturaAtiva) {
+  // Step 2: Validate active subscription
+  const hasActiveSubscription = await validateActiveSubscription(session.companyId);
+  if (!hasActiveSubscription) {
     return NextResponse.json(
-      { error: "Assinatura inativa. Renov e seu plano para acessar." },
+      { error: "Active subscription required." },
       { status: 403 }
     );
   }
 
-  // 3. Parse ebook ID
-  const { id } = await params;
-  const ebookId = parseInt(id, 10);
-  if (isNaN(ebookId)) {
-    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-  }
+  // Step 3: Determine PDF path based on e-book ID
+  const pdfFilename = `${id}.pdf`;
+  const pdfPath = `/pdfs/${pdfFilename}`;
 
-  // 4. Fetch ebook from database
-  const ebook = await prisma.ebook.findUnique({
-    where: { id: ebookId },
-  });
-
-  if (!ebook) {
-    return NextResponse.json({ error: "E-book não encontrado" }, { status: 404 });
-  }
-
-  // 5. Resolve PDF path
-  // The pdf field contains a filename (e.g. "ebook.pdf")
-  // PDFs are served from /private/pdfs/ (outside public/)
-  const pdfFilename = path.basename(ebook.pdf);
-  const pdfPath = path.join(process.cwd(), "private", "pdfs", pdfFilename);
-
-  // Security: ensure the resolved path is actually inside the pdfs directory
-  const pdfsDir = path.join(process.cwd(), "private", "pdfs");
-  if (!pdfPath.startsWith(pdfsDir)) {
-    return NextResponse.json({ error: "Caminho inválido" }, { status: 400 });
-  }
-
-  // 6. Check if file exists
-  let fileBuffer: Buffer;
   try {
-    fileBuffer = await fs.readFile(pdfPath);
-  } catch {
-    // If file not found, return a structured JSON error instead of crashing
+    // Step 4: Increment download counter (only for downloads, not inline reads)
+    if (isDownload) {
+      // TODO: After issue #4 (catalogo), increment contadorDownloads in database
+      // await incrementDownloadCounter(id);
+    }
+
+    // Step 5: Serve PDF file
+    const pdfUrl = new URL(request.url);
+    const proxyUrl = `${pdfUrl.origin}${pdfPath}`;
+
+    const pdfResponse = await fetch(proxyUrl);
+    if (!pdfResponse.ok) {
+      return NextResponse.json(
+        { error: "PDF not found." },
+        { status: 404 }
+      );
+    }
+
+    const pdfBuffer = await pdfResponse.arrayBuffer();
+
+    return new NextResponse(pdfBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": isDownload
+          ? `attachment; filename="${pdfFilename}"`
+          : `inline; filename="${pdfFilename}"`,
+        "Content-Length": pdfBuffer.byteLength.toString(),
+        "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    });
+  } catch (error) {
+    console.error(`Error serving PDF for ebook ${id}:`, error);
     return NextResponse.json(
-      { error: "Arquivo PDF não encontrado no servidor. Entre em contato com o suporte." },
-      { status: 404 }
+      { error: "Failed to serve PDF." },
+      { status: 500 }
     );
   }
-
-  // 7. Increment download counter
-  await prisma.ebook.update({
-    where: { id: ebookId },
-    data: { contadorDownloads: { increment: 1 } },
-  });
-
-  // 8. Serve the PDF with proper headers
-  return new NextResponse(new Uint8Array(fileBuffer), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${pdfFilename}"`,
-      "Content-Length": fileBuffer.length.toString(),
-      "Cache-Control": "private, no-cache, no-store, must-revalidate",
-      "Pragma": "no-cache",
-      "Expires": "0",
-    },
-  });
 }

@@ -1,11 +1,44 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
-export const metadata = {
-  title: "Recuperar Senha — Pixel Liber",
-};
-
 export default function EsqueceuSenhaPage() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage({ text: data.error ?? "Erro desconhecido.", type: "error" });
+      } else {
+        setMessage({
+          text: "Se o email estiver cadastrado, você receberá um link de recuperação.",
+          type: "success",
+        });
+        setEmail("");
+      }
+    } catch {
+      setMessage({ text: "Erro de conexão. Tente novamente.", type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <main
@@ -50,17 +83,41 @@ export default function EsqueceuSenhaPage() {
               Digite seu email para recuperar sua senha:
             </p>
 
-            <form className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <input
                   type="email"
                   placeholder="E-mail..."
                   className="input-login"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
                 />
               </div>
 
-              <button type="submit" className="btn-gradient w-full py-3">
-                Recuperar Senha
+              {message && (
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "5px",
+                    fontSize: "13px",
+                    textAlign: "center",
+                    backgroundColor: message.type === "error" ? "rgba(220, 50, 50, 0.2)" : "rgba(50, 180, 80, 0.2)",
+                    color: message.type === "error" ? "#f88" : "#8f8",
+                    border: `1px solid ${message.type === "error" ? "rgba(220,50,50,0.4)" : "rgba(50,180,80,0.4)"}`,
+                  }}
+                >
+                  {message.text}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="btn-gradient w-full py-3"
+                disabled={loading}
+              >
+                {loading ? "Enviando..." : "Recuperar Senha"}
               </button>
             </form>
 
