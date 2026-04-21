@@ -18,41 +18,41 @@ interface UserInfo {
   name?: string;
 }
 
-export default function MinhaContaPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.authenticated) {
-          setUser(data.user);
-        } else {
-          router.push("/login");
+async function getUserData(session: any) {
+  const userId = (session.user as any).id;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { company: true },
+  });
+  if (!user) return null;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    assinaturaAtiva: user.company?.statusAssinatura === "ativa",
+    company: user.company
+      ? {
+          name: user.company.name,
+          cnpj: user.company.cnpj,
+          statusAssinatura: user.company.statusAssinatura,
         }
-        setLoading(false);
-      })
-      .catch(() => {
-        router.push("/login");
-        setLoading(false);
-      });
-  }, [router]);
+      : null,
+  };
+}
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+export default async function MinhaContaPage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-        <p className="text-white">Carregando...</p>
-      </div>
-    );
+  const user = await getUserData(session);
+  if (!user) {
+    redirect("/login");
   }
+
+  const isAdmin = (session.user as any).role === "ADMIN";
 
   return (
     <>
@@ -111,35 +111,6 @@ export default function MinhaContaPage() {
             <p className="text-gray-300 mb-8">
               Gerencie suas informações pessoais e altere sua senha quando necessário.
             </p>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Empresa</label>
-                <input type="text" value={user?.name ?? ""} readOnly className="opacity-70" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">CNPJ</label>
-                <input
-                  type="text"
-                  value={
-                    user?.cnpj
-                      ? user.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5")
-                      : ""
-                  }
-                  readOnly
-                  className="opacity-70"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Nova senha (deixe em branco para não alterar)</label>
-                <input type="password" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Confirmar nova senha</label>
-                <input type="password" />
-              </div>
-              <button className="btn-blue">Salvar alterações</button>
-            </div>
           </div>
 
           {/* Account Form — interactive client component */}
