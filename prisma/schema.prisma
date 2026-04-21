@@ -10,22 +10,59 @@ datasource db {
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  cnpj      String   @unique
-  name      String
-  email     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User?
+  id             String     @id @default(cuid())
+  cnpj           String     @unique
+  name           String
+  email          String?
+  statusAssinatura String?  @default("trial")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  user           User?
+  employees      Employee[]
+  ebooks         Ebook[]
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String?
+  id           String    @id @default(cuid())
+  email        String?   @unique
   passwordHash String
   name         String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  companyId    String   @unique
-  company      Company  @relation(fields: [companyId], references: [id])
+  role         String    @default("USER")
+  lastLoginAt  DateTime?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  companyId    String?   @unique
+  company      Company?  @relation(fields: [companyId], references: [id])
+  employee     Employee?
+}
+
+model Employee {
+  id              String   @id @default(cuid())
+  fullName        String
+  corporateEmail   String   @unique
+  role            String?
+  department       String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  companyId       String?
+  userId          String?  @unique
+  company         Company? @relation(fields: [companyId], references: [id])
+  user            User?    @relation(fields: [userId], references: [id])
+}
+
+model Ebook {
+  id                  String   @id @default(cuid())
+  titulo              String
+  autor               String?
+  descricao           String?
+  capa                String?
+  pdf                 String?
+  categoria           String?
+  tags                String?
+  contadorDownloads   Int      @default(0)
+  createdAt           DateTime @default(now())
+  companyId           String?
+  company             Company? @relation(fields: [companyId], references: [id])
 }
