@@ -1,63 +1,40 @@
-// In-memory rate limiter for login attempts
-// Cleans up old entries periodically
-
-interface RateLimitEntry {
-  count: number;
-  firstAttempt: number;
-}
-
-const loginAttempts = new Map<string, RateLimitEntry>();
-
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+/**
+ * In-memory rate limiter for login attempts.
+ * Key: CNPJ + IP, Value: array of timestamps (last 15 minutes)
+ *
+ * This is more secure than IP-only limiting because it prevents an attacker
+ * from exhausting login attempts for a target CNPJ from a single IP.
+ */
+const attempts = new Map<string, number[]>();
 const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
-// Periodically clean up expired entries (every 30 minutes)
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of loginAttempts.entries()) {
-    if (now - entry.firstAttempt > WINDOW_MS) {
-      loginAttempts.delete(key);
-    }
-  }
-}, 30 * 60 * 1000);
-
-export function checkLoginRateLimit(ip: string): { allowed: boolean; remaining: number; resetIn: number } {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-
-  if (!entry) {
-    return { allowed: true, remaining: MAX_ATTEMPTS - 1, resetIn: 0 };
-  }
-
-  // Window expired
-  if (now - entry.firstAttempt > WINDOW_MS) {
-    loginAttempts.delete(ip);
-    return { allowed: true, remaining: MAX_ATTEMPTS - 1, resetIn: 0 };
-  }
-
-  // Still within window
-  if (entry.count >= MAX_ATTEMPTS) {
-    const resetIn = Math.ceil((entry.firstAttempt + WINDOW_MS - now) / 1000);
-    return { allowed: false, remaining: 0, resetIn };
-  }
-
-  return { allowed: true, remaining: MAX_ATTEMPTS - entry.count, resetIn: 0 };
+function buildKey(cnpj: string, ip: string): string {
+  return `${cnpj}:${ip}`;
 }
 
-export function recordFailedLogin(ip: string): void {
+export function isRateLimited(cnpj: string, ip: string): boolean {
   const now = Date.now();
-  const entry = loginAttempts.get(ip);
+  const key = buildKey(cnpj, ip);
+  const record = attempts.get(key) ?? [];
+  const recent = record.filter((t) => now - t < WINDOW_MS);
 
-  if (!entry) {
-    loginAttempts.set(ip, { count: 1, firstAttempt: now });
-    return;
+  if (recent.length >= MAX_ATTEMPTS) {
+    return true;
   }
 
-  // Reset if window expired
-  if (now - entry.firstAttempt > WINDOW_MS) {
-    loginAttempts.set(ip, { count: 1, firstAttempt: now });
-    return;
-  }
+  attempts.set(key, [...recent, now]);
+  return false;
+}
 
-  entry.count++;
+export function recordAttempt(cnpj: string, ip: string): void {
+  const now = Date.now();
+  const key = buildKey(cnpj, ip);
+  const record = attempts.get(key) ?? [];
+  const recent = record.filter((t) => now - t < WINDOW_MS);
+  attempts.set(key, [...recent, now]);
+}
+
+export function clearAttempts(cnpj: string, ip: string): void {
+  attempts.delete(buildKey(cnpj, ip));
 }

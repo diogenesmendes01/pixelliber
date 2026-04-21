@@ -3,33 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
 import { validateCNPJ } from "@/lib/cnpj";
 import bcrypt from "bcryptjs";
-import { checkLoginRateLimit, recordFailedLogin } from "@/lib/rate-limit";
+import { isRateLimited, recordAttempt } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
-  // Get client IP
   const forwarded = request.headers.get("x-forwarded-for");
   const ip = forwarded ? forwarded.split(",")[0].trim() : request.headers.get("x-real-ip") || "unknown";
-
-  // Check rate limit
-  const { allowed, remaining, resetIn } = checkLoginRateLimit(ip);
-
-  if (!allowed) {
-    return NextResponse.json(
-      {
-        error: "Too many login attempts. Please try again later.",
-        retryAfter: resetIn,
-      },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(resetIn),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Limit": "5",
-          "X-RateLimit-Reset": String(Date.now() + resetIn * 1000),
-        },
-      }
-    );
-  }
 
   try {
     const body = await request.json();
@@ -43,8 +21,16 @@ export async function POST(request: NextRequest) {
     }
 
     const cnpjCleaned = cnpj.replace(/[^\d]/g, "");
+
+    if (isRateLimited(cnpjCleaned, ip)) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     if (!validateCNPJ(cnpjCleaned)) {
-      recordFailedLogin(ip);
+      recordAttempt(cnpjCleaned, ip);
       return NextResponse.json(
         { error: "CNPJ ou senha incorretos" },
         { status: 401 }
@@ -57,7 +43,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!company || company.users.length === 0) {
-      recordFailedLogin(ip);
+      recordAttempt(cnpjCleaned, ip);
       return NextResponse.json(
         { error: "CNPJ ou senha incorretos" },
         { status: 401 }
@@ -67,7 +53,7 @@ export async function POST(request: NextRequest) {
     const user = company.users[0];
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) {
-      recordFailedLogin(ip);
+      recordAttempt(cnpjCleaned, ip);
       return NextResponse.json(
         { error: "CNPJ ou senha incorretos" },
         { status: 401 }
@@ -86,13 +72,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json(
       { message: "Login realizado com sucesso", company: { name: company.name, cnpj: company.cnpj } },
-      {
-        status: 200,
-        headers: {
-          "X-RateLimit-Remaining": String(remaining),
-          "X-RateLimit-Limit": "5",
-        },
-      }
+      { status: 200 }
     );
 
     response.cookies.set("auth_token", token, {
@@ -105,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    recordFailedLogin(ip);
+    recordAttempt("unknown", ip);
     console.error("Login error:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
