@@ -2,10 +2,75 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
+function validateCNPJ(cnpj: string): boolean {
+  const cleaned = cnpj.replace(/[^\d]/g, "");
+  return /^\d{14}$/.test(cleaned);
+}
+
 export default function LoginPage() {
+  const router = useRouter();
   const [rememberMe, setRememberMe] = useState(false);
+  const [cnpj, setCnpj] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function formatCNPJ(value: string): string {
+    const digits = value.replace(/[^\d]/g, "");
+    let formatted = digits.slice(0, 14);
+    formatted = formatted.replace(/^(\d{2})(\d)/, "$1.$2");
+    formatted = formatted.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+    formatted = formatted.replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4");
+    formatted = formatted.replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5");
+    return formatted;
+  }
+
+  function handleCNPJChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setCnpj(formatCNPJ(e.target.value));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!cnpj || !password) {
+      setError("CNPJ e senha são obrigatórios");
+      return;
+    }
+
+    const cleaned = cnpj.replace(/[^\d]/g, "");
+    if (!validateCNPJ(cleaned)) {
+      setError("CNPJ ou senha incorretos");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cnpj, password, rememberMe }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "CNPJ ou senha incorretos");
+        return;
+      }
+
+      router.push("/vitrine");
+      router.refresh();
+    } catch {
+      setError("Erro ao conectar com o servidor");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <>
@@ -44,12 +109,16 @@ export default function LoginPage() {
               />
             </div>
 
-            <form className="space-y-5">
+            <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
                 <input
                   type="text"
                   placeholder="CNPJ"
                   className="input-login"
+                  value={cnpj}
+                  onChange={handleCNPJChange}
+                  maxLength={18}
+                  autoComplete="username"
                 />
               </div>
 
@@ -58,8 +127,15 @@ export default function LoginPage() {
                   type="password"
                   placeholder="Senha"
                   className="input-login"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                 />
               </div>
+
+              {error && (
+                <p className="text-red-400 text-sm text-center">{error}</p>
+              )}
 
               <div className="flex items-center gap-3">
                 <div
@@ -73,8 +149,12 @@ export default function LoginPage() {
                 </span>
               </div>
 
-              <button type="submit" className="btn-gradient w-full py-3">
-                Entrar
+              <button
+                type="submit"
+                className="btn-gradient w-full py-3"
+                disabled={loading}
+              >
+                {loading ? "Entrando..." : "Entrar"}
               </button>
             </form>
 

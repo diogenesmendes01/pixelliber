@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
+import { validateCsrfRequest } from "@/lib/csrf";
 
 export async function GET() {
   const session = await auth();
@@ -29,6 +32,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = (session.user as any).id;
+  const csrfError = await validateCsrfRequest(req, userId);
+  if (csrfError) return csrfError;
+
   const companyId = (session.user as any).companyId;
   if (!companyId) {
     return NextResponse.json({ error: "No company associated" }, { status: 400 });
@@ -53,14 +60,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const password = initialPassword || Math.random().toString(36).slice(-8);
+  const password = initialPassword || randomUUID().replace(/-/g, "").slice(0, 8);
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
     data: {
       name: fullName,
       email: corporateEmail,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       role: "USER",
       companyId,
     },
