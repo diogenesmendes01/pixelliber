@@ -6,6 +6,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import ManageTeam from "@/components/ManageTeam";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import AccountForm from "@/components/AccountForm";
 
 interface UserInfo {
   userId: string;
@@ -101,7 +105,7 @@ export default function MinhaContaPage() {
             </button>
           </div>
 
-          {/* Account Section */}
+          {/* Account Header */}
           <div className="account-section">
             <h2 className="text-2xl font-bold mb-2">Dados da Conta</h2>
             <p className="text-gray-300 mb-8">
@@ -137,6 +141,12 @@ export default function MinhaContaPage() {
               <button className="btn-blue">Salvar alterações</button>
             </div>
           </div>
+
+          {/* Account Form — interactive client component */}
+          <AccountForm user={user} />
+
+          {/* Team Management — Admin only */}
+          {isAdmin && <ManageTeam />}
         </div>
       </main>
       <WhatsAppButton />
