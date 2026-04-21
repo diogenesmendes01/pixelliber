@@ -48,3 +48,6 @@ next-env.d.ts
 # SQLite databases
 *.db
 prisma/dev.db
+
+# Private PDFs
+/private/pdfs/*.pdf
