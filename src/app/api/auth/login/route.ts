@@ -1,18 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
-import { validateCNPJ } from "@/lib/cnpj";
+import { checkLoginRateLimit, getRateLimitResponse } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
-import { isRateLimited, recordAttempt } from "@/lib/rate-limit";
+
+function validateCNPJ(cnpj: string): boolean {
+  const cleaned = cnpj.replace(/[^\d]/g, "");
+  if (cleaned.length !== 14) return false;
+  // Basic validation: just checks that all 14 digits are numbers
+  return /^\d{14}$/.test(cleaned);
+}
 
 export async function POST(request: NextRequest) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : request.headers.get("x-real-ip") || "unknown";
+  // Check rate limit
+  const { allowed, resetAt } = checkLoginRateLimit(request);
+  if (!allowed) {
+    return getRateLimitResponse(resetAt);
+  }
 
   try {
     const body = await request.json();
     const { cnpj, password, rememberMe } = body;
 
+    // Validate required fields
     if (!cnpj || !password) {
       return NextResponse.json(
         { error: "CNPJ e senha são obrigatórios" },
@@ -20,49 +30,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate CNPJ format (00.000.000/0000-00)
     const cnpjCleaned = cnpj.replace(/[^\d]/g, "");
-
-    if (isRateLimited(cnpjCleaned, ip)) {
-      return NextResponse.json(
-        { error: "Too many login attempts. Please try again later." },
-        { status: 429 }
-      );
-    }
-
     if (!validateCNPJ(cnpjCleaned)) {
-      recordAttempt(cnpjCleaned, ip);
       return NextResponse.json(
         { error: "CNPJ ou senha incorretos" },
         { status: 401 }
       );
     }
 
+    // Find company and user
     const company = await prisma.company.findUnique({
       where: { cnpj: cnpjCleaned },
-      include: { users: true },
+      include: { user: true },
     });
 
-    if (!company || company.users.length === 0) {
-      recordAttempt(cnpjCleaned, ip);
+    if (!company || !company.user) {
       return NextResponse.json(
         { error: "CNPJ ou senha incorretos" },
         { status: 401 }
       );
     }
 
-    const user = company.users[0];
-    const validPassword = await bcrypt.compare(password, user.passwordHash);
+    // Verify password
+    const validPassword = await bcrypt.compare(password, company.user.passwordHash);
     if (!validPassword) {
-      recordAttempt(cnpjCleaned, ip);
       return NextResponse.json(
         { error: "CNPJ ou senha incorretos" },
         { status: 401 }
       );
     }
 
+    // Generate JWT
     const token = await signToken(
       {
-        userId: user.id,
+        userId: company.user.id,
         companyId: company.id,
         cnpj: cnpjCleaned,
         name: company.name,
@@ -70,6 +72,7 @@ export async function POST(request: NextRequest) {
       !!rememberMe
     );
 
+    // Set HTTP-only cookie
     const response = NextResponse.json(
       { message: "Login realizado com sucesso", company: { name: company.name, cnpj: company.cnpj } },
       { status: 200 }
@@ -79,13 +82,12 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 2,
+      maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 2, // 30 days or 2 hours
       path: "/",
     });
 
     return response;
   } catch (error) {
-    recordAttempt("unknown", ip);
     console.error("Login error:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },

@@ -10,24 +10,22 @@ datasource db {
 }
 
 model Company {
-  id           String   @id @default(cuid())
-  cnpj         String   @unique
-  name         String
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  users        User[]
+  id        String   @id @default(cuid())
+  cnpj      String   @unique
+  name      String
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?
 }
 
 model User {
   id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
+  email        String?
   passwordHash String
-  role         String   @default("admin")
-  company      Company  @relation(fields: [companyId], references: [id])
-  companyId    String
+  name         String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  companyId    String   @unique
+  company      Company  @relation(fields: [companyId], references: [id])
 }
