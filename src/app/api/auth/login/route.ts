@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
+import { checkLoginRateLimit, getRateLimitResponse } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 
 function validateCNPJ(cnpj: string): boolean {
@@ -11,6 +12,12 @@ function validateCNPJ(cnpj: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  // Check rate limit
+  const { allowed, resetAt } = checkLoginRateLimit(request);
+  if (!allowed) {
+    return getRateLimitResponse(resetAt);
+  }
+
   try {
     const body = await request.json();
     const { cnpj, password, rememberMe } = body;
