@@ -109,15 +109,23 @@ export default function ManageTeam() {
     setResetPwdFor(null);
   }
 
-  function startResetPwd(emp: Employee) {
-    const newPassword = Math.random().toString(36).slice(-8);
-    fetch(`/api/employees/${emp.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ resetPassword: true }),
-    }).then((res) => res.json().then((data) => {
-      if (data.tempPassword) setTempPassword(data.tempPassword);
-    }));
+  async function startResetPwd(emp: Employee) {
+    try {
+      const res = await fetch(`/api/employees/${emp.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetPassword: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.tempPassword) {
+        setTempPassword(data.tempPassword);
+        showMessage("success", "Senha redefinida com sucesso!");
+      } else {
+        showMessage("error", data.error || "Erro ao redefinir senha");
+      }
+    } catch {
+      showMessage("error", "Erro ao redefinir senha");
+    }
   }
 
   function resetForm() {

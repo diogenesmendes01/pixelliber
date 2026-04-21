@@ -3,7 +3,16 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+function csrfCheck(req: NextRequest): boolean {
+  const origin = req.headers.get("origin") || req.headers.get("referer");
+  if (!origin) return false;
+  return origin.includes(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000");
+}
+
 export async function PUT(req: NextRequest) {
+  if (!csrfCheck(req)) {
+    return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
+  }
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
