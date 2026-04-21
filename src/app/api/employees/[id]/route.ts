@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
   });
 
   if (resetPassword && employee.userId) {
-    const newPassword = Math.random().toString(36).slice(-8);
+    const newPassword = crypto.randomUUID().split('-')[0];
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: employee.userId },

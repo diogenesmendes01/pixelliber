@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const password = initialPassword || Math.random().toString(36).slice(-8);
+  const password = initialPassword || crypto.randomUUID().split('-')[0];
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
