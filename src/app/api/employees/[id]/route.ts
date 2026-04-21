@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
-import { randomUUID } from "crypto";
+import { validateCsrfRequest } from "@/lib/csrf";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -31,6 +31,10 @@ export async function PUT(req: NextRequest, { params }: Context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = (session.user as any).id;
+  const csrfError = await validateCsrfRequest(req, userId);
+  if (csrfError) return csrfError;
+
   const { id } = await params;
   const body = await req.json();
   const { fullName, role, department, resetPassword } = body;
@@ -52,7 +56,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
   });
 
   if (resetPassword && employee.userId) {
-<    const newPassword = crypto.randomUUID().split('-')[0];
+    const newPassword = crypto.randomUUID().split("-")[0];
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: employee.userId },
@@ -69,6 +73,10 @@ export async function DELETE(req: NextRequest, { params }: Context) {
   if (!session?.user || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const userId = (session.user as any).id;
+  const csrfError = await validateCsrfRequest(req, userId);
+  if (csrfError) return csrfError;
 
   const { id } = await params;
   const employee = await prisma.employee.findUnique({ where: { id } });

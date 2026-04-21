@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validateCsrfRequest } from "@/lib/csrf";
 
 export async function PUT(req: NextRequest) {
   const session = await auth();
@@ -9,6 +10,9 @@ export async function PUT(req: NextRequest) {
   }
 
   const userId = (session.user as any).id;
+  const csrfError = await validateCsrfRequest(req, userId);
+  if (csrfError) return csrfError;
+
   const body = await req.json();
   const { name, email } = body;
 
