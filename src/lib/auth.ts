@@ -66,7 +66,46 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  // Fail loudly in production if NEXTAUTH_SECRET is not set
+  secret: (() => {
+    const secret = process.env.NEXTAUTH_SECRET;
+    const isBuildTime = process.env.NEXT_PHASE === "phase-production-build";
+
+    if (!secret) {
+      if (process.env.NODE_ENV === "production") {
+        if (isBuildTime) {
+          // During `next build`: fail immediately so CI/CD fails fast if secret is missing.
+          throw new Error(
+            "[auth] NEXTAUTH_SECRET environment variable is not set. " +
+              "Set it in your production environment to secure authentication sessions."
+          );
+        }
+        // At runtime in production, fail immediately — auth is broken without a secret.
+        throw new Error(
+          "[auth] NEXTAUTH_SECRET environment variable is not set. " +
+            "Set it in your production environment to secure authentication sessions."
+        );
+      }
+      // In development, warn but allow build to proceed
+      console.warn(
+        "[auth] NEXTAUTH_SECRET is not set. " +
+          "This is insecure for production. Set NEXTAUTH_SECRET in your environment variables."
+      );
+      return undefined;
+    }
+    return secret;
+  })(),
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      },
+    },
+  },
   session: { strategy: "jwt" },
 };
 

@@ -5,6 +5,15 @@ import { jwtVerify } from "jose";
 const SUBSCRIPTION_PROTECTED_ROUTES = ["/vitrine"];
 const BASIC_PROTECTED_ROUTES = ["/minha-conta"];
 
+// Validate secret lazily at runtime (not at module evaluation time)
+function getSecret(): Uint8Array {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error("NEXTAUTH_SECRET environment variable is required");
+  }
+  return new TextEncoder().encode(secret);
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get("next-auth.session-token")?.value ||
@@ -16,7 +25,7 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
     try {
-      const SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || "fallback-secret");
+      const SECRET = getSecret();
       await jwtVerify(token, SECRET);
     } catch {
       return NextResponse.redirect(new URL("/login", req.url));
@@ -30,7 +39,7 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
     try {
-      const SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || "fallback-secret");
+      const SECRET = getSecret();
       const { payload } = await jwtVerify(token, SECRET);
 
       // Check subscriptionActive flag in token (set by NextAuth callback when user logs in)
