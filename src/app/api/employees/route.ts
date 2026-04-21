@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const password = initialPassword || crypto.randomUUID().split("-")[0];
+  const password = initialPassword || randomUUID().replace(/-/g, "").slice(0, 8);
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
