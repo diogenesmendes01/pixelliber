@@ -1,26 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
+import { verifyToken } from "@/lib/auth";
 
-const SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || "fallback-secret");
+const PUBLIC_PATHS = ["/", "/login", "/cadastro-assinante", "/contato", "/esqueceu-senha", "/api/auth/login", "/api/auth/logout"];
 
-export async function middleware(req: NextRequest) {
-  const token = req.cookies.get("next-auth.session-token")?.value ||
-    req.cookies.get("__Secure-next-auth.session-token")?.value;
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // Allow public paths
+  if (PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith("/api/auth/"))) {
+    return NextResponse.next();
   }
 
-  try {
-    const { payload } = await jwtVerify(token, SECRET);
-    (req as any).__auth = payload;
-  } catch {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // Allow static files and Next.js internals
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/logo") ||
+    pathname.startsWith("/icons") ||
+    pathname.startsWith("/ebooks") ||
+    pathname.startsWith("/videos") ||
+    pathname.startsWith("/bg") ||
+    pathname.includes(".")
+  ) {
+    return NextResponse.next();
+  }
+
+  // Check auth token
+  const token = request.cookies.get("auth_token")?.value;
+
+  if (!token) {
+    // Not authenticated - redirect to login
+    if (pathname === "/login") {
+      return NextResponse.next();
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const payload = await verifyToken(token);
+
+  if (!payload) {
+    // Invalid token - redirect to login
+    if (pathname === "/login") {
+      return NextResponse.next();
+    }
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    // Clear invalid cookie
+    response.cookies.set("auth_token", "", { httpOnly: true, maxAge: 0, path: "/" });
+    return response;
+  }
+
+  // Authenticated - redirect /login to /vitrine
+  if (pathname === "/login") {
+    return NextResponse.redirect(new URL("/vitrine", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/minha-conta"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\..*$).*)",
+  ],
 };

@@ -3,6 +3,8 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
+import { validateCsrfRequest } from "@/lib/csrf";
 
 export async function GET() {
   const session = await auth();
@@ -29,6 +31,10 @@ export async function POST(req: NextRequest) {
   if (!session?.user || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const userId = (session.user as any).id;
+  const csrfError = await validateCsrfRequest(req, userId);
+  if (csrfError) return csrfError;
 
   const companyId = (session.user as any).companyId;
   if (!companyId) {
@@ -61,7 +67,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: fullName,
       email: corporateEmail,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       role: "USER",
       companyId,
     },

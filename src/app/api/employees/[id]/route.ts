@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { validateCsrfRequest } from "@/lib/csrf";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -32,6 +33,10 @@ export async function PUT(req: NextRequest, { params }: Context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = (session.user as any).id;
+  const csrfError = await validateCsrfRequest(req, userId);
+  if (csrfError) return csrfError;
+
   const { id } = await params;
   const companyId = (session.user as any).companyId;
   const body = await req.json();
@@ -58,7 +63,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: employee.userId },
-      data: { password: hashed },
+      data: { passwordHash: hashed },
     });
     return NextResponse.json({ employee: updated, tempPassword: newPassword });
   }
@@ -71,6 +76,10 @@ export async function DELETE(req: NextRequest, { params }: Context) {
   if (!session?.user || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const userId = (session.user as any).id;
+  const csrfError = await validateCsrfRequest(req, userId);
+  if (csrfError) return csrfError;
 
   const { id } = await params;
   const companyId = (session.user as any).companyId;
