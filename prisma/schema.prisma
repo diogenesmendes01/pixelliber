@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// This is your Prisma schema file
 
 generator client {
   provider = "prisma-client"
@@ -11,61 +10,24 @@ datasource db {
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String
-  cnpj      String?  @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Subscription fields
-  dataAssinatura    DateTime?
-  statusAssinatura  String    @default("inativa") // "ativa" | "inativa"
-
-  employees Employee[]
-  users     User[]
+  id           String   @id @default(cuid())
+  cnpj         String   @unique
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  users        User[]
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  passwordHash String
-  role         String    @default("USER") // ADMIN | USER
-  companyId    String?
-  company      Company?  @relation(fields: [companyId], references: [id])
-  employee     Employee?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  lastLoginAt  DateTime?
-  isActive     Boolean   @default(true)
-}
-
-model Employee {
   id           String   @id @default(cuid())
-  fullName     String
-  corporateEmail String
-  role         String?
-  department   String?
-  companyId    String
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin")
   company      Company  @relation(fields: [companyId], references: [id])
-  userId       String?  @unique
-  user         User?    @relation(fields: [userId], references: [id])
-  isActive     Boolean  @default(true)
+  companyId    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-}
-
-model Ebook {
-  id                Int      @id @default(autoincrement())
-  titulo            String
-  autor             String
-  descricao         String
-  categoria         String
-  capa              String
-  pdf               String
-  dataPublicacao    DateTime
-  numeroPaginas     Int
-  tags              String
-  destaque          Boolean  @default(false)
-  contadorDownloads Int      @default(0)
 }

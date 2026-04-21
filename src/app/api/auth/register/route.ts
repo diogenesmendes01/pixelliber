@@ -71,12 +71,14 @@ export async function POST(request: NextRequest) {
       data: {
         cnpj: cleanCnpj,
         name,
+        email,
+        passwordHash,
         users: {
           create: {
             name,
             email,
             passwordHash,
-            role: "ADMIN",
+            role: "admin",
           },
         },
       },

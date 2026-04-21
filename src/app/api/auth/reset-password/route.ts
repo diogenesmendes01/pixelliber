@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { validateResetToken, invalidateToken, logRecoveryAttempt } from "@/lib/token-store";
 import { isRateLimited } from "@/lib/rate-limit";
-import { updateUserPassword } from "@/lib/user-store";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,8 +59,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update password in user store (file-based for dev; replace with DB in production)
-    await updateUserPassword(email, newPassword);
+    // Update password in database
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { email },
+      data: { passwordHash },
+    });
 
     // Invalidate token (single use)
     invalidateToken(token);

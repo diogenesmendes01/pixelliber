@@ -1,12 +1,8 @@
-import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-
 /**
- * File-based store for password reset tokens.
- * In production, replace with a database table.
+ * In-memory store for password reset tokens.
+ * In production, this should be a database table.
  *
- * Token shape: { email, token, expiresAt, used }
+ * Token shape: { email, token, expiresAt }
  */
 interface ResetToken {
   email: string;
@@ -15,32 +11,15 @@ interface ResetToken {
   used: boolean;
 }
 
-const STORE_FILE = path.join(process.cwd(), ".reset_tokens.json");
-
-function readTokens(): Record<string, ResetToken> {
-  try {
-    if (!fs.existsSync(STORE_FILE)) return {};
-    const raw = fs.readFileSync(STORE_FILE, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
-}
-
-function writeTokens(data: Record<string, ResetToken>): void {
-  // Prune expired tokens on every write to keep file clean
-  const now = Date.now();
-  const pruned: Record<string, ResetToken> = {};
-  for (const [k, v] of Object.entries(data)) {
-    if (v.expiresAt > now) {
-      pruned[k] = v;
-    }
-  }
-  fs.writeFileSync(STORE_FILE, JSON.stringify(pruned, null, 2));
-}
+const tokens = new Map<string, ResetToken>();
 
 function generateToken(): string {
-  return crypto.randomUUID();
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
 export interface CreateTokenResult {
@@ -49,21 +28,16 @@ export interface CreateTokenResult {
 }
 
 export function createResetToken(email: string): CreateTokenResult {
-  const tokens = readTokens();
-
   // Invalidate any existing unused tokens for this email
-  const updated: Record<string, ResetToken> = {};
-  for (const [key, val] of Object.entries(tokens)) {
+  for (const [key, val] of tokens) {
     if (val.email === email && !val.used) {
-      continue; // drop it
+      tokens.delete(key);
     }
-    updated[key] = val;
   }
 
   const token = generateToken();
   const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-  updated[token] = { email, token, expiresAt, used: false };
-  writeTokens(updated);
+  tokens.set(token, { email, token, expiresAt, used: false });
   return { token, expiresAt };
 }
 
@@ -74,8 +48,7 @@ export interface ValidateTokenResult {
 }
 
 export function validateResetToken(token: string): ValidateTokenResult {
-  const tokens = readTokens();
-  const record = tokens[token];
+  const record = tokens.get(token);
 
   if (!record) {
     return { valid: false, reason: "Token not found" };
@@ -86,6 +59,7 @@ export function validateResetToken(token: string): ValidateTokenResult {
   }
 
   if (Date.now() > record.expiresAt) {
+    tokens.delete(token);
     return { valid: false, reason: "Token expired" };
   }
 
@@ -93,18 +67,14 @@ export function validateResetToken(token: string): ValidateTokenResult {
 }
 
 export function invalidateToken(token: string): void {
-  const tokens = readTokens();
-  const record = tokens[token];
+  const record = tokens.get(token);
   if (record) {
     record.used = true;
-    tokens[token] = record;
-    writeTokens(tokens);
   }
 }
 
 export function getTokenRecord(token: string): ResetToken | undefined {
-  const tokens = readTokens();
-  return tokens[token];
+  return tokens.get(token);
 }
 
 /**
