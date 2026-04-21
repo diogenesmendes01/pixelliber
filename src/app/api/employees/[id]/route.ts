@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
@@ -12,12 +13,13 @@ export async function GET(req: NextRequest, { params }: Context) {
   }
 
   const { id } = await params;
+  const companyId = (session.user as any).companyId;
   const employee = await prisma.employee.findUnique({
     where: { id },
     include: { user: { select: { lastLoginAt: true, isActive: true } } },
   });
 
-  if (!employee) {
+  if (!employee || employee.companyId !== companyId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -31,11 +33,12 @@ export async function PUT(req: NextRequest, { params }: Context) {
   }
 
   const { id } = await params;
+  const companyId = (session.user as any).companyId;
   const body = await req.json();
   const { fullName, role, department, resetPassword } = body;
 
   const employee = await prisma.employee.findUnique({ where: { id } });
-  if (!employee) {
+  if (!employee || employee.companyId !== companyId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -51,7 +54,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
   });
 
   if (resetPassword && employee.userId) {
-    const newPassword = Math.random().toString(36).slice(-8);
+    const newPassword = randomUUID().replace(/-/g, "").slice(0, 8);
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: employee.userId },
@@ -70,8 +73,9 @@ export async function DELETE(req: NextRequest, { params }: Context) {
   }
 
   const { id } = await params;
+  const companyId = (session.user as any).companyId;
   const employee = await prisma.employee.findUnique({ where: { id } });
-  if (!employee) {
+  if (!employee || employee.companyId !== companyId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
