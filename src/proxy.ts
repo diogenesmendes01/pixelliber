@@ -1,60 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
+import { verifyToken } from "@/lib/auth";
 
-// Routes that require authentication + active subscription
-const SUBSCRIPTION_PROTECTED_ROUTES = ["/vitrine"];
-const BASIC_PROTECTED_ROUTES = ["/minha-conta"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/cadastro-assinante",
+  "/contato",
+  "/esqueceu-senha",
+  "/acesso-bloqueado",
+  "/reset-password",
+];
 
-// Validate secret lazily at runtime (not at module evaluation time)
-function getSecret(): Uint8Array {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) {
-    throw new Error("NEXTAUTH_SECRET environment variable is required");
-  }
-  return new TextEncoder().encode(secret);
-}
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-export async function proxy(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const token = req.cookies.get("next-auth.session-token")?.value ||
-    req.cookies.get("__Secure-next-auth.session-token")?.value;
-
-  // --- Check auth for /minha-conta ---
-  if (BASIC_PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    try {
-      const SECRET = getSecret();
-      await jwtVerify(token, SECRET);
-    } catch {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
+  // Allow public paths and all auth API routes
+  if (
+    PUBLIC_PATHS.some((p) => pathname === p) ||
+    pathname.startsWith("/api/auth/")
+  ) {
     return NextResponse.next();
   }
 
-  // --- Check auth + subscription for /vitrine ---
-  if (SUBSCRIPTION_PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    try {
-      const SECRET = getSecret();
-      const { payload } = await jwtVerify(token, SECRET);
-
-      // Check subscriptionActive flag in token (set by NextAuth callback when user logs in)
-      if (!payload.assinaturaAtiva) {
-        return NextResponse.redirect(new URL("/acesso-bloqueado", req.url));
-      }
-    } catch {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
+  // Allow static assets and Next.js internals
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/logo") ||
+    pathname.startsWith("/icons") ||
+    pathname.startsWith("/ebooks") ||
+    pathname.startsWith("/videos") ||
+    pathname.startsWith("/bg") ||
+    pathname.includes(".")
+  ) {
     return NextResponse.next();
+  }
+
+  const token = request.cookies.get("auth_token")?.value;
+
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const payload = await verifyToken(token);
+
+  if (!payload) {
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.set("auth_token", "", { httpOnly: true, maxAge: 0, path: "/" });
+    return response;
+  }
+
+  // Authenticated — redirect /login to /vitrine
+  if (pathname === "/login") {
+    return NextResponse.redirect(new URL("/vitrine", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/vitrine/:path*", "/minha-conta/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\..*$).*)",
+  ],
 };
