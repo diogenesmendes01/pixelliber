@@ -5,6 +5,11 @@ import { checkLoginRateLimit, getRateLimitResponse } from "@/lib/rate-limit";
 import { validateCNPJ, cleanCNPJ } from "@/lib/cnpj";
 import bcrypt from "bcryptjs";
 
+/**
+ * Login via CNPJ (empresa) ou e-mail (usuário).
+ * Aceita: { identifier, password, rememberMe }
+ * identifier = CNPJ formatado/não, ou email cadastrado
+ */
 export async function POST(request: NextRequest) {
   // Check rate limit
   const { allowed, resetAt } = checkLoginRateLimit(request);
@@ -14,40 +19,88 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { cnpj, password, rememberMe } = body;
+    // Aceita tanto 'identifier' (novo) quanto 'cnpj' (legacy)
+    const identifier = body.identifier ?? body.cnpj;
+    const { password, rememberMe } = body;
 
     // Validate required fields
-    if (!cnpj || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
-        { error: "CNPJ e senha são obrigatórios" },
+        { error: "CNPJ/e-mail e senha são obrigatórios" },
         { status: 400 }
       );
     }
 
-    // Validate CNPJ format with full digit verification
-    const cnpjCleaned = cleanCNPJ(cnpj);
-    if (!validateCNPJ(cnpjCleaned)) {
-      return NextResponse.json(
-        { error: "CNPJ inválido", errorCode: "CNPJ_INVALID" },
-        { status: 400 }
-      );
+    const isEmail = identifier.includes("@");
+    let user = null;
+    let company = null;
+
+    if (isEmail) {
+      // Login via e-mail
+      user = await prisma.user.findUnique({
+        where: { email: identifier.toLowerCase() },
+        include: { company: true },
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          { error: "E-mail não encontrado", errorCode: "EMAIL_NOT_FOUND" },
+          { status: 401 }
+        );
+      }
+
+      company = user.company;
+    } else {
+      // Login via CNPJ
+      const cnpjCleaned = cleanCNPJ(identifier);
+
+      if (!validateCNPJ(cnpjCleaned)) {
+        return NextResponse.json(
+          { error: "CNPJ inválido", errorCode: "CNPJ_INVALID" },
+          { status: 400 }
+        );
+      }
+
+      company = await prisma.company.findUnique({
+        where: { cnpj: cnpjCleaned },
+        include: { user: true },
+      });
+
+      if (!company) {
+        return NextResponse.json(
+          { error: "CNPJ não encontrado", errorCode: "CNPJ_NOT_FOUND" },
+          { status: 401 }
+        );
+      }
+
+      if (!company.user) {
+        return NextResponse.json(
+          { error: "Conta não encontrada para esta empresa", errorCode: "CNPJ_NOT_FOUND" },
+          { status: 401 }
+        );
+      }
+
+      user = company.user;
     }
 
-    // Find company and user
-    const company = await prisma.company.findUnique({
-      where: { cnpj: cnpjCleaned },
-      include: { user: true },
-    });
-
-    if (!company || !company.user) {
+    // Se não encontrou usuário
+    if (!user) {
       return NextResponse.json(
-        { error: "CNPJ não encontrado", errorCode: "CNPJ_NOT_FOUND" },
+        { error: "Credenciais inválidas", errorCode: "INVALID" },
         { status: 401 }
       );
     }
 
-    // Verify password
-    const validPassword = await bcrypt.compare(password, company.user.passwordHash);
+    // Verifica se usuário está ativo
+    if (!user.isActive) {
+      return NextResponse.json(
+        { error: "Conta desativada. Entre em contato com o administrador.", errorCode: "ACCOUNT_DISABLED" },
+        { status: 403 }
+      );
+    }
+
+    // Verifica senha
+    const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) {
       return NextResponse.json(
         { error: "Senha incorreta", errorCode: "WRONG_PASSWORD" },
@@ -55,32 +108,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const firstAccess = company.user.lastLoginAt === null;
+    const firstAccess = user.lastLoginAt === null;
 
     // Update lastLoginAt
     await prisma.user.update({
-      where: { id: company.user.id },
+      where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
 
-    // Generate JWT
+    // Gera JWT
     const token = await signToken(
       {
-        userId: company.user.id,
-        companyId: company.id,
-        cnpj: cnpjCleaned,
-        name: company.name,
-        role: company.user.role,
+        userId: user.id,
+        companyId: company!.id,
+        cnpj: company!.cnpj,
+        name: user.name || company!.name,
+        role: user.role,
       },
       !!rememberMe
     );
 
-    // Set HTTP-only cookie
+    // Define cookie HTTP-only
     const response = NextResponse.json(
       {
         message: "Login realizado com sucesso",
         firstAccess,
-        company: { name: company.name, cnpj: company.cnpj },
+        user: {
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        company: {
+          name: company!.name,
+          cnpj: company!.cnpj,
+        },
       },
       { status: 200 }
     );
@@ -89,7 +150,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 2, // 30 days or 2 hours
+      maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 2, // 30 dias ou 2 horas
       path: "/",
     });
 
