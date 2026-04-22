@@ -2,18 +2,37 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { maskCNPJ } from "@/lib/utils";
+import { validateCNPJ } from "@/lib/cnpj";
 
 interface LoginFormProps {
   onSuccess: (data: { firstAccess: boolean; password: string }) => void;
   onForgotPassword: () => void;
-  onBlocked?: (cnpj: string) => void;
+  onBlocked?: (identifier: string) => void;
 }
 
-type ErrorKind = null | "cnpj-not-found" | "wrong-password" | "cnpj-invalid" | "generic" | "offline";
+type ErrorKind = null | "not-found" | "wrong-password" | "invalid" | "generic" | "offline";
+
+function isEmail(value: string): boolean {
+  return value.includes("@");
+}
+
+function isCNPJ(value: string): boolean {
+  const cleaned = value.replace(/\D/g, "");
+  return validateCNPJ(cleaned);
+}
+
+function maskCNPJ(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  let formatted = digits.slice(0, 14);
+  formatted = formatted.replace(/^(\d{2})(\d)/, "$1.$2");
+  formatted = formatted.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+  formatted = formatted.replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4");
+  formatted = formatted.replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5");
+  return formatted;
+}
 
 export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: LoginFormProps) {
-  const [cnpj, setCnpj] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errorKind, setErrorKind] = useState<ErrorKind>(null);
@@ -35,6 +54,18 @@ export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: Lo
     };
   }, []);
 
+  function handleIdentifierChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+
+    if (isEmail(value)) {
+      // É email - não formata
+      setIdentifier(value);
+    } else {
+      // Não é email - aplica máscara de CNPJ
+      setIdentifier(maskCNPJ(value));
+    }
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setErrorKind(null);
@@ -44,9 +75,16 @@ export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: Lo
       setErrorKind("offline");
       return;
     }
-    if (!cnpj || !password) {
+    if (!identifier || !password) {
       setErrorKind("generic");
-      setErrorText("CNPJ e senha são obrigatórios");
+      setErrorText("CNPJ/e-mail e senha são obrigatórios");
+      return;
+    }
+
+    // Validação prévia do formato
+    if (!isEmail(identifier) && !isCNPJ(identifier)) {
+      setErrorKind("invalid");
+      setErrorText("Digite um CNPJ válido ou e-mail cadastrado");
       return;
     }
 
@@ -55,31 +93,31 @@ export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: Lo
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cnpj, password, rememberMe }),
+        body: JSON.stringify({ identifier, password, rememberMe }),
       });
       const data = await res.json();
       if (!res.ok) {
         const code = data.errorCode as string | undefined;
-        if (code === "CNPJ_NOT_FOUND" || code === "CNPJ_INVALID") {
-          setErrorKind("cnpj-not-found");
-        } else if (code === "WRONG_PASSWORD") {
+        if (code === "CNPJ_NOT_FOUND" || code === "CNPJ_INVALID" || code === "EMAIL_NOT_FOUND") {
+          setErrorKind("not-found");
+        } else if (code === "WRONG_PASSWORD" || code === "SENHA_INCORRETA") {
           const next = attempts + 1;
           setAttempts(next);
           if (next >= 5 && onBlocked) {
-            onBlocked(cnpj);
+            onBlocked(identifier);
             return;
           }
           setErrorKind("wrong-password");
         } else if (res.status === 429) {
           if (onBlocked) {
-            onBlocked(cnpj);
+            onBlocked(identifier);
             return;
           }
           setErrorKind("generic");
           setErrorText("Muitas tentativas. Tente novamente em 15 minutos.");
         } else {
           setErrorKind("generic");
-          setErrorText(data.error ?? "CNPJ ou senha incorretos");
+          setErrorText(data.error ?? "Credenciais inválidas");
         }
         return;
       }
@@ -160,16 +198,16 @@ export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: Lo
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 0 14px" }}>
         <div style={{ flex: 1, height: 1, background: "var(--line-ink)" }} />
-        <span style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.14em" }}>ou com CNPJ</span>
+        <span style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.14em" }}>ou com CNPJ ou e-mail</span>
         <div style={{ flex: 1, height: 1, background: "var(--line-ink)" }} />
       </div>
 
-      {errorKind === "cnpj-not-found" && (
+      {errorKind === "not-found" && (
         <div className="alert alert--danger">
           <span className="alert-icon">!</span>
           <div>
-            <div className="alert-title">CNPJ não encontrado</div>
-            <div className="alert-msg">Não achamos esse CNPJ na base. Confira a digitação ou <Link href="/#planos" style={{ color: "var(--ink)", fontWeight: 500, textDecoration: "underline" }}>contrate um plano</Link>.</div>
+            <div className="alert-title">Não encontrado</div>
+            <div className="alert-msg">Não achamos esse CNPJ ou e-mail na base. Confira a digitação ou <Link href="/#planos" style={{ color: "var(--ink)", fontWeight: 500, textDecoration: "underline" }}>contrate um plano</Link>.</div>
           </div>
         </div>
       )}
@@ -184,6 +222,15 @@ export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: Lo
         </div>
       )}
 
+      {errorKind === "invalid" && errorText && (
+        <div className="alert alert--danger">
+          <span className="alert-icon">!</span>
+          <div>
+            <div className="alert-title">{errorText}</div>
+          </div>
+        </div>
+      )}
+
       {errorKind === "generic" && errorText && (
         <div className="alert alert--danger">
           <span className="alert-icon">!</span>
@@ -191,7 +238,7 @@ export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: Lo
         </div>
       )}
 
-      {errorKind !== "cnpj-not-found" && errorKind !== "wrong-password" && (
+      {errorKind !== "not-found" && errorKind !== "wrong-password" && (
         <div className="hint">
           <span>✦</span>
           <div>
@@ -205,14 +252,15 @@ export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: Lo
         <div className="field">
           <label className="label">CNPJ ou e-mail</label>
           <input
-            className={`input${errorKind === "cnpj-not-found" ? " input--err" : ""}`}
-            placeholder="00.000.000/0000-00"
-            value={cnpj}
-            onChange={(e) => setCnpj(maskCNPJ(e.target.value))}
-            maxLength={18}
+            className={`input${errorKind === "not-found" ? " input--err" : ""}`}
+            placeholder={isEmail(identifier) ? "email@empresa.com" : "00.000.000/0000-00"}
+            value={identifier}
+            onChange={handleIdentifierChange}
+            maxLength={isEmail(identifier) ? 255 : 18}
             autoComplete="username"
+            inputMode={isEmail(identifier) ? "email" : "numeric"}
           />
-          {errorKind === "cnpj-not-found" && (
+          {errorKind === "not-found" && (
             <div className="err-msg">Formato aceito, mas não está cadastrado.</div>
           )}
         </div>
