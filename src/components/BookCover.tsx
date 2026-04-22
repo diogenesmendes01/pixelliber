@@ -5,6 +5,7 @@ export interface BookData {
   t: string;
   a: string;
   tag: string;
+  cat?: string;
   hue: number;
   img?: string | null;
   isNew?: boolean;
