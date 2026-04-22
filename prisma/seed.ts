@@ -34,6 +34,7 @@ async function main() {
       cnpj: "12345678000190",
       name: "Empresa Teste Pixel Liber",
       email: "teste@pixelliber.com.br",
+      statusAssinatura: "ativa",
       user: {
         create: {
           passwordHash,
