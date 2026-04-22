@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateCNPJ, cleanCNPJ } from "@/lib/cnpj";
 import bcrypt from "bcryptjs";
+import { checkLoginRateLimit, getRateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { allowed, resetAt } = checkLoginRateLimit(request);
+    if (!allowed) {
+      return getRateLimitResponse(resetAt);
+    }
     const { name, email, cnpj, password, confirmPassword } = body;
 
     if (!name || !email || !cnpj || !password || !confirmPassword) {

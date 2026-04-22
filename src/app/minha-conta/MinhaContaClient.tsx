@@ -137,8 +137,8 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
           </>
         )}
         <Link href="/minha-conta" className="active">⚙ Minha conta</Link>
-        <Link href="#">💳 Plano &amp; fatura</Link>
-        {isAdmin && <Link href="#">📊 Uso e relatórios</Link>}
+        <button className="console-link" onClick={() => setToast("Plano & fatura estará disponível em breve.")}>💳 Plano &amp; fatura</button>
+        {isAdmin && <button className="console-link" onClick={() => setToast("Uso e relatórios estará disponível em breve.")}>📊 Uso e relatórios</button>}
         <div className="side-foot">
           <strong style={{ color: "var(--paper)", fontWeight: 500 }}>{user.company?.name ?? "Empresa"}</strong>
           <br />

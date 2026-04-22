@@ -68,6 +68,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const [forgotEmail, setForgotEmail] = useState("");
+  const [ssoMsg, setSsoMsg] = useState("");
 
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -175,7 +176,7 @@ export default function LoginPage() {
               <button
                 className="btn btn--ghost"
                 style={{ color: "var(--ink)", borderColor: "var(--line-ink)", justifyContent: "center", gap: 10, background: "#fff" }}
-                onClick={() => alert("SSO Google")}
+                onClick={() => setSsoMsg("Autenticação via Google estará disponível em breve.")}
               >
                 <svg width={16} height={16} viewBox="0 0 18 18" aria-hidden="true">
                   <path fill="#4285f4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.48h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.614z"/>
@@ -188,7 +189,7 @@ export default function LoginPage() {
               <button
                 className="btn btn--ghost"
                 style={{ color: "var(--ink)", borderColor: "var(--line-ink)", justifyContent: "center", gap: 10, background: "#fff" }}
-                onClick={() => alert("SSO Microsoft")}
+                onClick={() => setSsoMsg("Autenticação via Microsoft estará disponível em breve.")}
               >
                 <svg width={16} height={16} viewBox="0 0 21 21" aria-hidden="true">
                   <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
@@ -199,6 +200,12 @@ export default function LoginPage() {
                 Entrar com Microsoft
               </button>
             </div>
+
+            {ssoMsg && (
+              <p style={{ textAlign: "center", fontSize: 12, color: "var(--gold)", marginTop: 8 }}>
+                {ssoMsg}
+              </p>
+            )}
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 0 14px" }}>
               <div style={{ flex: 1, height: 1, background: "var(--line-ink)" }} />

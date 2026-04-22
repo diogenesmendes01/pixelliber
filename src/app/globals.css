@@ -266,6 +266,8 @@ body.light .input, .paper-panel .input { background: #fff; border-color: rgba(15
 .console-side a.active { background: rgba(247, 245, 240, 0.08); opacity: 1; color: var(--gold); }
 .console-side .side-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin: 16px 0 6px; padding: 0 12px; }
 .console-side .side-foot { margin-top: auto; padding: 14px 12px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); line-height: 1.55; }
+.console-link { background: none; border: none; cursor: pointer; font-size: inherit; font-family: inherit; color: inherit; padding: 0; display: block; width: 100%; text-align: left; }
+.console-link:hover { color: var(--gold); }
 
 .console-main { padding: clamp(20px, 3.5vw, 40px); max-width: 1000px; }
 .console-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }

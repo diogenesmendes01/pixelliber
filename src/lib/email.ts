@@ -36,17 +36,28 @@ export async function sendResetEmail({ to, resetLink }: SendResetEmailParams): P
     to,
     subject: "Recuperação de Senha — Pixel Liber",
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #333;">Recuperação de Senha</h2>
-        <p>Você solicitou a recuperação de senha da sua conta Pixel Liber.</p>
-        <p>Clique no link abaixo para redefinir sua senha:</p>
-        <p>
-          <a href="${resetLink}" style="display: inline-block; background: #6c63ff; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">
-            Redefinir Senha
-          </a>
-        </p>
-        <p>Se você não solicitou essa recuperação, ignore este email.</p>
-        <p style="color: #888; font-size: 12px;">Este link expira em 24 horas e pode ser usado apenas uma vez.</p>
+      <div style="background:#0f0f10;min-height:100vh;padding:40px 20px;font-family:Arial,sans-serif;">
+        <div style="max-width:520px;margin:0 auto;">
+          <div style="text-align:center;margin-bottom:32px;">
+            <span style="font-size:24px;font-weight:600;color:#f7f5f0;letter-spacing:-0.5px;">Pixel <span style="color:#c9a84c;">Liber</span></span>
+          </div>
+          <div style="background:#17171a;border-radius:16px;padding:40px;border:1px solid rgba(247,245,240,0.08);">
+            <h2 style="color:#f7f5f0;font-size:22px;margin:0 0 12px;">Recuperação de senha</h2>
+            <p style="color:#8f8c84;font-size:14px;line-height:1.6;margin:0 0 28px;">
+              Você solicitou a redefinição de senha da sua conta Pixel Liber. Clique no botão abaixo para criar uma nova senha.
+            </p>
+            <a href="${resetLink}" style="display:block;text-align:center;background:#c9a84c;color:#0f0f10;padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;">
+              Redefinir senha
+            </a>
+            <p style="color:#8f8c84;font-size:12px;margin:24px 0 0;text-align:center;">
+              Se você não solicitou isso, ignore este email. Sua senha permanece a mesma.<br/>
+              Este link expira em 24 horas e pode ser usado apenas uma vez.
+            </p>
+          </div>
+          <p style="text-align:center;color:#4a4843;font-size:11px;margin-top:24px;">
+            © Pixel Liber · Sua biblioteca digital corporativa
+          </p>
+        </div>
       </div>
     `,
     text: `Recuperação de Senha — Pixel Liber\n\nClique no link para redefinir sua senha: ${resetLink}\n\nSe você não solicitou, ignore este email. Este link expira em 24h.`,
