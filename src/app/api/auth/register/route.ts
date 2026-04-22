@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
             name,
             email,
             passwordHash,
-            role: "admin",
+            role: "ADMIN",
           },
         },
       },
