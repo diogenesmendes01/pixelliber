@@ -73,6 +73,41 @@ export default function LoginPage() {
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingFirstAccess, setSavingFirstAccess] = useState(false);
+  const [firstAccessError, setFirstAccessError] = useState("");
+
+  async function handleSaveFirstAccess() {
+    setSavingFirstAccess(true);
+    setFirstAccessError("");
+    try {
+      const [profileRes, passwordRes] = await Promise.all([
+        fetch("/api/users/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newName, email: newEmail }),
+        }),
+        fetch("/api/users/password", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currentPassword: password,
+            newPassword,
+            confirmPassword,
+          }),
+        }),
+      ]);
+      if (!profileRes.ok || !passwordRes.ok) {
+        const err = await (profileRes.ok ? passwordRes : profileRes).json();
+        setFirstAccessError(err.error || "Erro ao salvar dados");
+        return;
+      }
+      setStep("pronto");
+    } catch {
+      setFirstAccessError("Erro de conexão");
+    } finally {
+      setSavingFirstAccess(false);
+    }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -372,13 +407,16 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {firstAccessError && (
+              <div className="err-msg" style={{ marginTop: 8 }}>{firstAccessError}</div>
+            )}
             <button
               className="btn btn--ink btn--block"
               style={{ marginTop: 20 }}
-              disabled={!newName || !newEmail || newPassword.length < 8 || newPassword !== confirmPassword}
-              onClick={() => setStep("pronto")}
+              disabled={savingFirstAccess || !newName || !newEmail || newPassword.length < 8 || newPassword !== confirmPassword}
+              onClick={handleSaveFirstAccess}
             >
-              Salvar e entrar →
+              {savingFirstAccess ? "Salvando…" : "Salvar e entrar →"}
             </button>
             <button
               className="btn btn--ghost btn--block btn--sm"
