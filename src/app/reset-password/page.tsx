@@ -33,8 +33,8 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setMessage({ text: "A senha deve ter pelo menos 6 caracteres.", type: "error" });
+    if (newPassword.length < 8) {
+      setMessage({ text: "A senha deve ter pelo menos 8 caracteres.", type: "error" });
       setLoading(false);
       return;
     }

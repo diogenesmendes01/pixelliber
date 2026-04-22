@@ -18,6 +18,15 @@ export async function GET(
     return NextResponse.json({ error: "Não autorizado. Faça login." }, { status: 401 });
   }
 
+  // Verify active subscription
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.userId },
+    include: { company: true },
+  });
+  if (dbUser?.company?.statusAssinatura !== "ativa") {
+    return NextResponse.json({ error: "Assinatura inativa." }, { status: 403 });
+  }
+
   // Verify ebook exists
   const ebook = await prisma.ebook.findUnique({ where: { id } });
   if (!ebook) {

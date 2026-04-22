@@ -22,6 +22,7 @@ export default async function EbookDetailPage({
   ]);
 
   if (!dbUser) redirect("/login");
+  if (dbUser.company?.statusAssinatura !== "ativa") redirect("/acesso-bloqueado");
   if (!ebook) notFound();
 
   return (

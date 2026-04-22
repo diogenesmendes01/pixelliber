@@ -12,6 +12,7 @@ export default async function VitrinePage() {
     include: { company: true },
   });
   if (!dbUser) redirect("/login");
+  if (dbUser.company?.statusAssinatura !== "ativa") redirect("/acesso-bloqueado");
 
   return (
     <VitrineClient

@@ -61,6 +61,12 @@ export default function EbookDetailClient({ ebook, user }: { ebook: Ebook; user:
         if (res.status === 403) { setError("Assinatura ativa necessária para baixar."); return; }
         throw new Error(data.error || "Falha ao baixar PDF.");
       }
+      // Register in reading history
+      await fetch(`/api/reading-history/${ebook.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progressPct: 0 }),
+      }).catch(() => undefined);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
