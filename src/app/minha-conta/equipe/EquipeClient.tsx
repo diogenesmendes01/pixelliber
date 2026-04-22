@@ -125,8 +125,8 @@ export default function EquipeClient({ companyName, userName }: Props) {
         <div className="side-lbl">Administração</div>
         <Link href="/minha-conta/equipe" className="active">👥 Equipe</Link>
         <Link href="/minha-conta">⚙ Minha conta</Link>
-        <Link href="#">💳 Plano &amp; fatura</Link>
-        <Link href="#">📊 Uso e relatórios</Link>
+        <button className="console-link" onClick={() => setToast("Plano & fatura estará disponível em breve.")}>💳 Plano &amp; fatura</button>
+        <button className="console-link" onClick={() => setToast("Uso e relatórios estará disponível em breve.")}>📊 Uso e relatórios</button>
         <div className="side-foot">
           <strong style={{ color: "var(--paper)", fontWeight: 500 }}>{companyName}</strong>
           <br />

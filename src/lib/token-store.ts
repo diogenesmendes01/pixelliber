@@ -1,43 +1,17 @@
-/**
- * In-memory store for password reset tokens.
- * In production, this should be a database table.
- *
- * Token shape: { email, token, expiresAt }
- */
-interface ResetToken {
-  email: string;
-  token: string;
-  expiresAt: number;
-  used: boolean;
-}
+import { prisma } from "./prisma";
+import crypto from "crypto";
 
-const tokens = new Map<string, ResetToken>();
-
-function generateToken(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 32; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+const TOKEN_EXPIRY_HOURS = 24;
 
 export interface CreateTokenResult {
   token: string;
-  expiresAt: number;
+  expiresAt: Date;
 }
 
-export function createResetToken(email: string): CreateTokenResult {
-  // Invalidate any existing unused tokens for this email
-  for (const [key, val] of tokens) {
-    if (val.email === email && !val.used) {
-      tokens.delete(key);
-    }
-  }
-
-  const token = generateToken();
-  const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-  tokens.set(token, { email, token, expiresAt, used: false });
+export async function createResetToken(email: string): Promise<CreateTokenResult> {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+  await prisma.passwordResetToken.create({ data: { email, token, expiresAt } });
   return { token, expiresAt };
 }
 
@@ -47,42 +21,21 @@ export interface ValidateTokenResult {
   reason?: string;
 }
 
-export function validateResetToken(token: string): ValidateTokenResult {
-  const record = tokens.get(token);
-
-  if (!record) {
-    return { valid: false, reason: "Token not found" };
-  }
-
-  if (record.used) {
-    return { valid: false, reason: "Token already used" };
-  }
-
-  if (Date.now() > record.expiresAt) {
-    tokens.delete(token);
-    return { valid: false, reason: "Token expired" };
-  }
-
+export async function validateResetToken(token: string): Promise<ValidateTokenResult> {
+  const record = await prisma.passwordResetToken.findUnique({ where: { token } });
+  if (!record) return { valid: false, reason: "not_found" };
+  if (record.usedAt) return { valid: false, reason: "already_used" };
+  if (record.expiresAt < new Date()) return { valid: false, reason: "expired" };
   return { valid: true, email: record.email };
 }
 
-export function invalidateToken(token: string): void {
-  const record = tokens.get(token);
-  if (record) {
-    record.used = true;
-  }
-}
-
-export function getTokenRecord(token: string): ResetToken | undefined {
-  return tokens.get(token);
+export async function invalidateToken(token: string): Promise<void> {
+  await prisma.passwordResetToken.update({ where: { token }, data: { usedAt: new Date() } });
 }
 
 /**
  * Log a recovery attempt. Never log sensitive data (email content).
  */
-export function logRecoveryAttempt(email: string, success: boolean, reason?: string): void {
-  const timestamp = new Date().toISOString();
-  // We only log masked version to avoid exposing full emails in logs
-  const masked = email.replace(/(.{2}).*(@.*)/, "$1***$2");
-  console.log(`[PasswordRecovery] ${timestamp} | masked=${masked} | success=${success} | reason=${reason ?? "n/a"}`);
+export function logRecoveryAttempt(identifier: string, success: boolean, reason?: string): void {
+  console.log(`[PasswordReset] ${success ? "SUCCESS" : "FAIL"} | ${identifier}${reason ? ` | ${reason}` : ""}`);
 }

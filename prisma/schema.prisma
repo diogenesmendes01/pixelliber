@@ -84,3 +84,12 @@ model ReadingHistory {
 
   @@unique([userId, ebookId])
 }
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}

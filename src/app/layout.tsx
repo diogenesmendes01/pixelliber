@@ -19,7 +19,11 @@ export const metadata: Metadata = {
   title: "Pixel Liber — Biblioteca digital corporativa",
   description: "Centenas de e-books de finanças, marketing e desenvolvimento pessoal. Leia online, salve offline, compartilhe trechos.",
   icons: {
-    icon: "/Logo-CodeWave_Favicon.png",
+    icon: [
+      { url: "/logo/icone/icone-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/logo/icone/icone-64x64.png", sizes: "64x64", type: "image/png" },
+    ],
+    apple: "/logo/icone/icone-180x180.png",
   },
   openGraph: {
     title: "Pixel Liber — Biblioteca digital corporativa",

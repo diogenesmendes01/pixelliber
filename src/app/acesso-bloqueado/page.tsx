@@ -1,10 +1,12 @@
-import Link from "next/link";
 import Image from "next/image";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 export const metadata = {
   title: "Acesso Bloqueado — Pixel Liber",
 };
+
+// Client component so it can call the logout API before redirecting
+import LogoutButton from "./LogoutButton";
 
 export default function AcessoBloqueadoPage() {
   return (
@@ -110,17 +112,7 @@ export default function AcessoBloqueadoPage() {
 
             {/* Logout link */}
             <div className="text-center">
-              <Link
-                href="/login"
-                style={{
-                  color: "#7F7878",
-                  fontSize: "14px",
-                  textDecoration: "underline",
-                }}
-                className="transition hover:opacity-80"
-              >
-                Sair da conta
-              </Link>
+              <LogoutButton />
             </div>
           </div>
         </div>

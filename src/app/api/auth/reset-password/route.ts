@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate token first to get email for rate limiting
-    const tokenResult = validateResetToken(token);
+    const tokenResult = await validateResetToken(token);
 
     if (!tokenResult.valid) {
       logRecoveryAttempt(token, false, tokenResult.reason ?? "invalid_token");
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Invalidate token (single use)
-    invalidateToken(token);
+    await invalidateToken(token);
 
     logRecoveryAttempt(email, true, "password_reset_success");
 
