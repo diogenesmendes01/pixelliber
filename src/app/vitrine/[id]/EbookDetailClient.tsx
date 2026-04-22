@@ -41,8 +41,13 @@ export default function EbookDetailClient({ ebook, user }: { ebook: Ebook; user:
 
   const { hue, label } = parseTags(ebook.tags);
 
-  const handleRead = () => {
+  const handleRead = async () => {
     window.open(`/api/ebooks/${ebook.id}/pdf`, "_blank");
+    await fetch(`/api/reading-history/${ebook.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progressPct: 0 }),
+    }).catch(() => undefined);
   };
 
   const handleDownload = async () => {
