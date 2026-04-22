@@ -17,12 +17,52 @@ const faqItems = [
   },
 ];
 
+type FormState = "idle" | "loading" | "success" | "error";
+
 export default function ContatoPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [formState, setFormState] = useState<FormState>("idle");
+  const [responseMessage, setResponseMessage] = useState("");
 
   const toggle = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setFormState("loading");
+    setResponseMessage("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, subject, message }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setFormState("success");
+        setResponseMessage(data.message ?? "Mensagem recebida! Retornaremos em breve.");
+        setName("");
+        setEmail("");
+        setSubject("");
+        setMessage("");
+      } else {
+        setFormState("error");
+        setResponseMessage(data.error ?? "Erro ao enviar mensagem. Tente novamente.");
+      }
+    } catch {
+      setFormState("error");
+      setResponseMessage("Erro de conexão. Verifique sua internet e tente novamente.");
+    }
+  }
 
   return (
     <>
@@ -132,6 +172,124 @@ export default function ContatoPage() {
               </div>
             </div>
           </div>
+
+          {/* Formulário de contato */}
+          <div className="mt-8" style={{ backgroundColor: "#252525", borderRadius: "15px", padding: "40px" }}>
+            <h2 className="mb-2 text-2xl font-semibold">Envie uma mensagem</h2>
+            <p style={{ color: "#9A9A9A", fontSize: "13px", marginBottom: "24px" }}>
+              Preencha o formulário abaixo e retornaremos o mais breve possível.
+            </p>
+
+            {formState === "success" && (
+              <div className="alert alert--ok" style={{ marginBottom: "20px" }}>
+                <span className="alert-icon">✓</span>
+                <div>
+                  <div className="alert-title">Mensagem enviada!</div>
+                  <div className="alert-msg">{responseMessage}</div>
+                </div>
+              </div>
+            )}
+
+            {formState === "error" && (
+              <div className="alert alert--danger" style={{ marginBottom: "20px" }}>
+                <span className="alert-icon">!</span>
+                <div>
+                  <div className="alert-title">Erro ao enviar</div>
+                  <div className="alert-msg">{responseMessage}</div>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="field">
+                <label className="label" htmlFor="contact-name">Nome *</label>
+                <input
+                  id="contact-name"
+                  type="text"
+                  className="input"
+                  placeholder="Seu nome completo"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  disabled={formState === "loading"}
+                  style={{
+                    background: "rgba(247, 245, 240, 0.06)",
+                    borderColor: "rgba(247, 245, 240, 0.18)",
+                    color: "var(--paper)",
+                  }}
+                />
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="contact-email">Email *</label>
+                <input
+                  id="contact-email"
+                  type="email"
+                  className="input"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={formState === "loading"}
+                  style={{
+                    background: "rgba(247, 245, 240, 0.06)",
+                    borderColor: "rgba(247, 245, 240, 0.18)",
+                    color: "var(--paper)",
+                  }}
+                />
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="contact-subject">Assunto</label>
+                <input
+                  id="contact-subject"
+                  type="text"
+                  className="input"
+                  placeholder="Assunto da mensagem (opcional)"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  disabled={formState === "loading"}
+                  style={{
+                    background: "rgba(247, 245, 240, 0.06)",
+                    borderColor: "rgba(247, 245, 240, 0.18)",
+                    color: "var(--paper)",
+                  }}
+                />
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="contact-message">Mensagem *</label>
+                <textarea
+                  id="contact-message"
+                  className="textarea"
+                  placeholder="Descreva sua dúvida ou mensagem..."
+                  rows={5}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  disabled={formState === "loading"}
+                  style={{
+                    background: "rgba(247, 245, 240, 0.06)",
+                    borderColor: "rgba(247, 245, 240, 0.18)",
+                    color: "var(--paper)",
+                    resize: "vertical",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginTop: "24px" }}>
+                <button
+                  type="submit"
+                  className="btn btn--gold btn--block"
+                  disabled={formState === "loading"}
+                  style={formState === "loading" ? { opacity: 0.6, cursor: "not-allowed" } : {}}
+                >
+                  {formState === "loading" ? "Enviando…" : "Enviar mensagem"}
+                </button>
+              </div>
+            </form>
+          </div>
+
         </div>
       </main>
       <WhatsAppButton />

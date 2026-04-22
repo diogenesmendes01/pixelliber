@@ -2,14 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
 import { checkLoginRateLimit, getRateLimitResponse } from "@/lib/rate-limit";
+import { validateCNPJ, cleanCNPJ } from "@/lib/cnpj";
 import bcrypt from "bcryptjs";
-
-function validateCNPJ(cnpj: string): boolean {
-  const cleaned = cnpj.replace(/[^\d]/g, "");
-  if (cleaned.length !== 14) return false;
-  // Basic validation: just checks that all 14 digits are numbers
-  return /^\d{14}$/.test(cleaned);
-}
 
 export async function POST(request: NextRequest) {
   // Check rate limit
@@ -30,8 +24,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate CNPJ format (00.000.000/0000-00)
-    const cnpjCleaned = cnpj.replace(/[^\d]/g, "");
+    // Validate CNPJ format with full digit verification
+    const cnpjCleaned = cleanCNPJ(cnpj);
     if (!validateCNPJ(cnpjCleaned)) {
       return NextResponse.json(
         { error: "CNPJ ou senha incorretos" },
@@ -61,6 +55,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const firstAccess = company.user.lastLoginAt === null;
+
+    // Update lastLoginAt
+    await prisma.user.update({
+      where: { id: company.user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
     // Generate JWT
     const token = await signToken(
       {
@@ -68,13 +70,18 @@ export async function POST(request: NextRequest) {
         companyId: company.id,
         cnpj: cnpjCleaned,
         name: company.name,
+        role: company.user.role,
       },
       !!rememberMe
     );
 
     // Set HTTP-only cookie
     const response = NextResponse.json(
-      { message: "Login realizado com sucesso", company: { name: company.name, cnpj: company.cnpj } },
+      {
+        message: "Login realizado com sucesso",
+        firstAccess,
+        company: { name: company.name, cnpj: company.cnpj },
+      },
       { status: 200 }
     );
 

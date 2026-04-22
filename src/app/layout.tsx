@@ -1,25 +1,33 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 
-const poppins = Poppins({
-  variable: "--font-poppins",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  axes: ["opsz"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Pixel Liber — E-books sem limites",
-  description:
-    "Veja e baixe diversos e-books, sem limites. Leia onde quiser, quando quiser.",
+  title: "Pixel Liber — Biblioteca digital corporativa",
+  description: "Centenas de e-books de finanças, marketing e desenvolvimento pessoal. Leia online, salve offline, compartilhe trechos.",
   icons: {
-    icon: "/logo/vertical/vertical-dark.png",
+    icon: [
+      { url: "/logo/icone/icone-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/logo/icone/icone-64x64.png", sizes: "64x64", type: "image/png" },
+    ],
+    apple: "/logo/icone/icone-180x180.png",
   },
   openGraph: {
-    title: "Pixel Liber — E-books sem limites",
-    description:
-      "Veja e baixe diversos e-books, sem limites. Leia onde quiser, quando quiser.",
+    title: "Pixel Liber — Biblioteca digital corporativa",
+    description: "Centenas de e-books de finanças, marketing e desenvolvimento pessoal.",
     url: "https://pixelliberdigital.com",
     siteName: "Pixel Liber",
     locale: "pt_BR",
@@ -33,8 +41,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${poppins.variable} antialiased`}>
-      <body className="min-h-screen bg-[#121212] text-[#E8E8E8]">{children}</body>
+    <html lang="pt-BR" className={`${inter.variable} ${fraunces.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

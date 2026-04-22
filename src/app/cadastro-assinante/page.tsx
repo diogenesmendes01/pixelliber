@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { maskCNPJ } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 export default function CadastroAssinantePage() {
@@ -21,25 +22,26 @@ export default function CadastroAssinantePage() {
     const { name, value } = e.target;
 
     if (name === "cnpj") {
-      const formatted = formatCNPJInput(value);
-      setFormData((prev) => ({ ...prev, [name]: formatted }));
+      setFormData((prev) => ({ ...prev, [name]: maskCNPJ(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const formatCNPJInput = (value: string): string => {
-    const digits = value.replace(/\D/g, "");
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
-    if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
-    if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
-    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`;
-  };
+  const passwordValid =
+    formData.password.length >= 8 &&
+    /[A-Z]/.test(formData.password) &&
+    /[0-9]/.test(formData.password);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!passwordValid) {
+      setError("A senha deve ter no mínimo 8 caracteres, uma letra maiúscula e um número.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -161,6 +163,22 @@ export default function CadastroAssinantePage() {
                   required
                   className="input-cadastro"
                 />
+                {formData.password.length > 0 && (
+                  <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div className={`req-row${formData.password.length >= 8 ? " ok" : ""}`}>
+                      <span className="req-dot">{formData.password.length >= 8 ? "✓" : "·"}</span>
+                      Mínimo 8 caracteres
+                    </div>
+                    <div className={`req-row${/[A-Z]/.test(formData.password) ? " ok" : ""}`}>
+                      <span className="req-dot">{/[A-Z]/.test(formData.password) ? "✓" : "·"}</span>
+                      Uma letra maiúscula
+                    </div>
+                    <div className={`req-row${/[0-9]/.test(formData.password) ? " ok" : ""}`}>
+                      <span className="req-dot">{/[0-9]/.test(formData.password) ? "✓" : "·"}</span>
+                      Um número
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <input

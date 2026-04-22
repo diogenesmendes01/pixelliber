@@ -1,12 +1,9 @@
 import { redirect } from "next/navigation";
-import Header from "@/components/Header";
-import WhatsAppButton from "@/components/WhatsAppButton";
 import MinhaContaClient from "./MinhaContaClient";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-async function getUserData(session: any) {
-  const userId = (session.user as any).userId;
+async function getUserData(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { company: true },
@@ -17,6 +14,8 @@ async function getUserData(session: any) {
     name: user.name,
     email: user.email,
     role: user.role,
+    twoFaEnabled: user.twoFaEnabled,
+    notifSettings: user.notifSettings,
     assinaturaAtiva: user.company?.statusAssinatura === "ativa",
     company: user.company
       ? {
@@ -34,18 +33,13 @@ export default async function MinhaContaPage() {
     redirect("/login");
   }
 
-  const user = await getUserData(session);
+  const userId = session.user.userId;
+  const user = await getUserData(userId);
   if (!user) {
     redirect("/login");
   }
 
-  const isAdmin = (session.user as any).role === "ADMIN";
+  const isAdmin = user.role === "ADMIN";
 
-  return (
-    <>
-      <Header />
-      <MinhaContaClient user={user} isAdmin={isAdmin} />
-      <WhatsAppButton />
-    </>
-  );
+  return <MinhaContaClient user={user} isAdmin={isAdmin} />;
 }

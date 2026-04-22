@@ -30,15 +30,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       return NextResponse.json(
-        { error: "A senha deve ter pelo menos 6 caracteres." },
+        { error: "A senha deve ter pelo menos 8 caracteres." },
         { status: 400 }
       );
     }
 
     // Validate token first to get email for rate limiting
-    const tokenResult = validateResetToken(token);
+    const tokenResult = await validateResetToken(token);
 
     if (!tokenResult.valid) {
       logRecoveryAttempt(token, false, tokenResult.reason ?? "invalid_token");
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Invalidate token (single use)
-    invalidateToken(token);
+    await invalidateToken(token);
 
     logRecoveryAttempt(email, true, "password_reset_success");
 

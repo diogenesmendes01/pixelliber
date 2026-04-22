@@ -1,198 +1,48 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import WhatsAppButton from "@/components/WhatsAppButton";
+import LoginForm from "./_components/LoginForm";
+import FirstAccessWizard from "./_components/FirstAccessWizard";
+import ForgotPasswordForm from "./_components/ForgotPasswordForm";
+import LoginLayout from "./_components/LoginLayout";
 
-function validateCNPJ(cnpj: string): boolean {
-  const cleaned = cnpj.replace(/[^\d]/g, "");
-  return /^\d{14}$/.test(cleaned);
-}
+type Flow = "login" | "first-access" | "forgot";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [rememberMe, setRememberMe] = useState(false);
-  const [cnpj, setCnpj] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [flow, setFlow] = useState<Flow>("login");
+  const [initialPassword, setInitialPassword] = useState("");
 
-  function formatCNPJ(value: string): string {
-    const digits = value.replace(/[^\d]/g, "");
-    let formatted = digits.slice(0, 14);
-    formatted = formatted.replace(/^(\d{2})(\d)/, "$1.$2");
-    formatted = formatted.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
-    formatted = formatted.replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4");
-    formatted = formatted.replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5");
-    return formatted;
-  }
-
-  function handleCNPJChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setCnpj(formatCNPJ(e.target.value));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-
-    if (!cnpj || !password) {
-      setError("CNPJ e senha são obrigatórios");
-      return;
-    }
-
-    const cleaned = cnpj.replace(/[^\d]/g, "");
-    if (!validateCNPJ(cleaned)) {
-      setError("CNPJ ou senha incorretos");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cnpj, password, rememberMe }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "CNPJ ou senha incorretos");
-        return;
-      }
-
-      router.push("/vitrine");
-      router.refresh();
-    } catch {
-      setError("Erro ao conectar com o servidor");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <>
-      <main
-        className="relative flex min-h-screen items-center justify-center px-4"
-        style={{
-          backgroundImage: "url('/bg/CAPA-AREA-DE-MEMBROS-GCSArtboard-1.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        {/* Dark overlay */}
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.8)" }}
+  if (flow === "first-access") {
+    return (
+      <LoginLayout>
+        <FirstAccessWizard
+          initialPassword={initialPassword}
+          onComplete={() => { window.location.href = "/vitrine"; }}
+          onBack={() => setFlow("login")}
         />
-
-        <div className="relative z-10 w-full" style={{ maxWidth: "400px" }}>
-          {/* Login card */}
-          <div
-            style={{
-              backgroundColor: "rgba(18, 18, 18, 0.85)",
-              padding: "80px 20px",
-              borderRadius: "5px",
-            }}
-          >
-            {/* Logo */}
-            <div className="mb-8 flex justify-center">
-              <Image
-                src="/logo/horizontal/horizontal-640x128.png"
-                alt="Pixel Liber"
-                width={140}
-                height={24}
-                priority
-                style={{ width: "110px", height: "auto" }}
-              />
-            </div>
-
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              <div>
-                <input
-                  type="text"
-                  placeholder="CNPJ"
-                  className="input-login"
-                  value={cnpj}
-                  onChange={handleCNPJChange}
-                  maxLength={18}
-                  autoComplete="username"
-                />
-              </div>
-
-              <div>
-                <input
-                  type="password"
-                  placeholder="Senha"
-                  className="input-login"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
-              </div>
-
-              {error && (
-                <p className="text-red-400 text-sm text-center">{error}</p>
-              )}
-
-              <div className="flex items-center gap-3">
-                <div
-                  className={`toggle-switch ${rememberMe ? "active" : ""}`}
-                  onClick={() => setRememberMe(!rememberMe)}
-                  role="switch"
-                  aria-checked={rememberMe}
-                />
-                <span style={{ color: "#E7D7D7", fontSize: "14px" }}>
-                  Mantenha-me logado
-                </span>
-              </div>
-
-              <button
-                type="submit"
-                className="btn-gradient w-full py-3"
-                disabled={loading}
-              >
-                {loading ? "Entrando..." : "Entrar"}
-              </button>
-            </form>
-
-            <div className="mt-4 text-center">
-              <a
-                href="/esqueceu-senha"
-                style={{ color: "#7F7878", fontSize: "14px" }}
-                className="transition hover:opacity-80"
-              >
-                Esqueceu sua senha?
-              </a>
-            </div>
-          </div>
-
-          {/* CNPJ hint card */}
-          <div
-            className="mt-4"
-            style={{
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              borderRadius: "10px",
-              padding: "20px",
-            }}
-          >
-            <p
-              style={{
-                color: "#E7D7D7",
-                fontSize: "14px",
-                textAlign: "center",
-                lineHeight: "1.6",
-              }}
-            >
-              Dica: Se esse é o seu primeiro acesso, use o seu CNPJ para o
-              usuário e senha.*
-            </p>
-          </div>
-        </div>
-      </main>
-      <WhatsAppButton />
-    </>
+      </LoginLayout>
+    );
+  }
+  if (flow === "forgot") {
+    return (
+      <LoginLayout>
+        <ForgotPasswordForm onBack={() => setFlow("login")} />
+      </LoginLayout>
+    );
+  }
+  return (
+    <LoginLayout>
+      <LoginForm
+        onSuccess={({ firstAccess, password }) => {
+          if (firstAccess) {
+            setInitialPassword(password);
+            setFlow("first-access");
+          } else {
+            window.location.href = "/vitrine";
+          }
+        }}
+        onForgotPassword={() => setFlow("forgot")}
+      />
+    </LoginLayout>
   );
 }

@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateCNPJ, cleanCNPJ } from "@/lib/cnpj";
 import bcrypt from "bcryptjs";
+import { checkLoginRateLimit, getRateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { allowed, resetAt } = checkLoginRateLimit(request);
+    if (!allowed) {
+      return getRateLimitResponse(resetAt);
+    }
     const { name, email, cnpj, password, confirmPassword } = body;
 
     if (!name || !email || !cnpj || !password || !confirmPassword) {
@@ -23,9 +28,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 8) {
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
+    if (!passwordRegex.test(password)) {
       return NextResponse.json(
-        { error: "A senha deve ter pelo menos 8 caracteres" },
+        { error: "A senha deve ter pelo menos 8 caracteres, uma letra maiúscula e um número." },
         { status: 400 }
       );
     }
@@ -77,7 +83,7 @@ export async function POST(request: NextRequest) {
             name,
             email,
             passwordHash,
-            role: "admin",
+            role: "ADMIN",
           },
         },
       },

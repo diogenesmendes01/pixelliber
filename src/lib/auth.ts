@@ -10,6 +10,7 @@ export interface JWTPayload {
   companyId: string;
   cnpj: string;
   name?: string;
+  role?: string;
   rememberMe?: boolean;
   [key: string]: unknown;
 }
