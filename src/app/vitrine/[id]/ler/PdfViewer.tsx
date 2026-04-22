@@ -43,10 +43,11 @@ export function PdfViewer({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Highlight search matches in rendered text layer
+  // Highlight search matches in rendered text layer.
+  // Usa manipulação de DOM (textContent + createElement) — sem innerHTML —
+  // pra evitar injeção de markup quando o PDF tiver texto parecido com HTML.
   useEffect(() => {
-    if (!searchQuery || searchQuery.length < 2) return;
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery?.toLowerCase() ?? "";
 
     const timer = setTimeout(() => {
       containerRefs.current.forEach((container) => {
@@ -56,19 +57,25 @@ export function PdfViewer({
 
         textLayer.querySelectorAll("span").forEach((span) => {
           const text = span.textContent ?? "";
-          const lower = text.toLowerCase();
-          if (!lower.includes(q)) {
-            // Remove existing mark if any
-            if (span.querySelector("mark.search-hit")) {
-              span.innerHTML = text;
-            }
-            return;
+
+          // Primeiro, limpa qualquer highlight anterior (sem innerHTML).
+          if (span.querySelector("mark.search-hit")) {
+            span.textContent = text;
           }
-          const idx = lower.indexOf(q);
-          const before = text.slice(0, idx);
-          const match = text.slice(idx, idx + q.length);
-          const after = text.slice(idx + q.length);
-          span.innerHTML = `${escapeHtml(before)}<mark class="search-hit">${escapeHtml(match)}</mark>${escapeHtml(after)}`;
+
+          if (!q || q.length < 2 || !text.toLowerCase().includes(q)) return;
+
+          const idx = text.toLowerCase().indexOf(q);
+          const before = document.createTextNode(text.slice(0, idx));
+          const mark = document.createElement("mark");
+          mark.className = "search-hit";
+          mark.textContent = text.slice(idx, idx + q.length);
+          const after = document.createTextNode(text.slice(idx + q.length));
+
+          span.textContent = "";
+          span.appendChild(before);
+          span.appendChild(mark);
+          span.appendChild(after);
         });
       });
     }, 150);
@@ -163,11 +170,3 @@ function PageFrame({
   );
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}

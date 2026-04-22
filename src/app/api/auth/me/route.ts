@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { findUserWithCompany, subscriptionActive } from "@/lib/user-company";
 
 export async function GET() {
   const session = await auth();
@@ -8,12 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = session.user.userId;
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { company: true },
-  });
-
+  const user = await findUserWithCompany(session.user.userId);
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -23,8 +18,8 @@ export async function GET() {
     name: user.name,
     email: user.email,
     role: user.role,
-    companyId: user.companyId,
-    assinaturaAtiva: user.company?.statusAssinatura === "ativa",
+    companyId: user.company?.id ?? null,
+    assinaturaAtiva: subscriptionActive(user.company),
     company: user.company
       ? {
           name: user.company.name,

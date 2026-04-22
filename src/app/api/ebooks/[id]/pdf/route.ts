@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { findUserWithCompany, subscriptionActive } from "@/lib/user-company";
 import path from "path";
 import { createReadStream } from "fs";
 import { stat } from "fs/promises";
@@ -20,21 +21,9 @@ export async function GET(
     return NextResponse.json({ error: "Não autorizado. Faça login." }, { status: 401 });
   }
 
-  // Verify active subscription
-  const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.userId },
-    select: {
-      id: true,
-      company: {
-        select: {
-          name: true,
-          cnpj: true,
-          statusAssinatura: true,
-        },
-      },
-    },
-  });
-  if (dbUser?.company?.statusAssinatura !== "ativa") {
+  // Verify active subscription (company pode vir de User.company OU de Employee.company)
+  const dbUser = await findUserWithCompany(session.user.userId);
+  if (!subscriptionActive(dbUser?.company)) {
     return NextResponse.json({ error: "Assinatura inativa." }, { status: 403 });
   }
 

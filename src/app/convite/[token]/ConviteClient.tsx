@@ -66,7 +66,7 @@ export default function ConviteClient({ token, invitedName, invitedEmail, compan
       const res = await fetch("/api/auth/accept-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email: invitedEmail, newPassword }),
+        body: JSON.stringify({ token, newPassword }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

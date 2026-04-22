@@ -54,7 +54,8 @@ export default function TwoFASetup({ email, onClose, onComplete }: Props) {
   function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     setVerifyError("");
-    // Stubbed verification: accept any 6-digit code (real TOTP check requires server-side)
+    // ⚠ Stub: em produção, validação TOTP precisa ser feita no servidor
+    // contra o secret armazenado (ver /api/users/2fa/verify — ainda não implementada).
     if (!/^\d{6}$/.test(code)) {
       setVerifyError("Digite os 6 dígitos do app.");
       return;
@@ -112,6 +113,16 @@ export default function TwoFASetup({ email, onClose, onComplete }: Props) {
             <p className="sub" style={{ color: "var(--muted)" }}>
               Use o Google Authenticator, Authy, 1Password ou outro app TOTP.
             </p>
+
+            <div className="alert alert--warn" style={{ marginBottom: 12 }}>
+              <span className="alert-icon">i</span>
+              <div>
+                <div className="alert-title">Modo demonstração</div>
+                <div className="alert-msg">
+                  A verificação TOTP neste preview ainda é simulada no cliente — nenhum código real é exigido no login. Use apenas para testar a UX; não habilite em produção até a validação server-side ficar pronta.
+                </div>
+              </div>
+            </div>
 
             <div
               style={{

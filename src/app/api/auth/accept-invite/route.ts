@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { signToken } from "@/lib/auth";
+import { signToken, verifyToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, newPassword } = await request.json();
+    const { token, newPassword } = await request.json();
 
-    if (!email || !newPassword) {
+    if (!token || !newPassword) {
       return NextResponse.json(
-        { error: "E-mail e senha são obrigatórios." },
+        { error: "Token e senha são obrigatórios." },
         { status: 400 }
       );
     }
@@ -21,26 +21,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar token — o invite link carrega um JWT assinado com {userId, companyId, cnpj, name}.
+    const payload = await verifyToken(token);
+    if (!payload || !payload.userId) {
+      return NextResponse.json(
+        { error: "Convite inválido ou expirado." },
+        { status: 401 }
+      );
+    }
+
+    // Buscar user e confirmar que ainda não fez login (convite é de uso único).
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { id: payload.userId },
       include: {
         company: true,
         employee: { include: { company: true } },
       },
     });
 
-    // Company pode vir do vínculo direto (admin) OU via Employee (funcionário)
-    const company = user?.company ?? user?.employee?.company ?? null;
-
-    if (!user || !company) {
+    if (!user) {
       return NextResponse.json(
         { error: "Convite inválido ou expirado." },
         { status: 404 }
       );
     }
 
+    if (user.lastLoginAt) {
+      return NextResponse.json(
+        { error: "Este convite já foi aceito. Faça login com sua senha." },
+        { status: 409 }
+      );
+    }
+
+    if (!user.isActive) {
+      return NextResponse.json(
+        { error: "Convite desativado. Fale com o administrador." },
+        { status: 403 }
+      );
+    }
+
+    const company = user.company ?? user.employee?.company ?? null;
+    if (!company) {
+      return NextResponse.json(
+        { error: "Vínculo com empresa não encontrado." },
+        { status: 404 }
+      );
+    }
+
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
+    // Troca senha + marca lastLoginAt — essa marcação também invalida o token (uso único).
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -49,7 +79,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const token = await signToken(
+    const sessionToken = await signToken(
       {
         userId: user.id,
         companyId: company.id,
@@ -61,7 +91,7 @@ export async function POST(request: NextRequest) {
     );
 
     const response = NextResponse.json({ ok: true });
-    response.cookies.set("auth_token", token, {
+    response.cookies.set("auth_token", sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

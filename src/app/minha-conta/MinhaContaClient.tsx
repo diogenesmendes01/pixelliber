@@ -206,11 +206,27 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
 
           <div className="flex-between" style={{ padding: "14px 0", borderTop: "1px solid var(--line-ink)", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <div className="flex">
+              <div className="flex" style={{ gap: 6, flexWrap: "wrap" }}>
                 <span style={{ fontWeight: 500, fontSize: 14 }}>Autenticação em 2 etapas</span>
                 <span className={`status-pill ${twoFA ? "ativo" : "inativo"}`}>{twoFA ? "ativo" : "desativado"}</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: "2px 7px",
+                    borderRadius: 999,
+                    background: "oklch(0.92 0.08 55)",
+                    color: "oklch(0.45 0.14 55)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    fontWeight: 600,
+                  }}
+                >
+                  demo
+                </span>
               </div>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>Recomendado para admins.</div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                Preview: validação TOTP ainda é simulada no cliente.
+              </div>
             </div>
             <div
               className={`toggle${twoFA ? " on" : ""}`}

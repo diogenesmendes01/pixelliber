@@ -64,13 +64,14 @@ export async function POST(req: NextRequest) {
   const password = initialPassword || crypto.randomUUID().replace(/-/g, "").slice(0, 8);
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  // User.companyId é @unique (exclusivo do admin).
+  // Funcionário vincula à empresa só via Employee.companyId/userId.
   const user = await prisma.user.create({
     data: {
       name: fullName,
       email: corporateEmail,
       passwordHash: hashedPassword,
       role: "USER",
-      companyId,
     },
   });
 
