@@ -222,11 +222,12 @@ export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: Lo
         </div>
       )}
 
-      {errorKind === "invalid" && errorText && (
+      {errorKind === "invalid" && (
         <div className="alert alert--danger">
           <span className="alert-icon">!</span>
           <div>
-            <div className="alert-title">{errorText}</div>
+            <div className="alert-title">Identificador inválido</div>
+            <div className="alert-msg">Digite um CNPJ válido (00.000.000/0000-00) ou e-mail cadastrado.</div>
           </div>
         </div>
       )}

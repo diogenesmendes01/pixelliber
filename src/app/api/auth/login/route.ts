@@ -102,9 +102,10 @@ export async function POST(request: NextRequest) {
 
     // Verifica se usuário está ativo
     if (!user.isActive) {
+      // Retorna erro genérico pra não expor que a conta existe
       return NextResponse.json(
-        { error: "Conta desativada. Entre em contato com o administrador.", errorCode: "ACCOUNT_DISABLED" },
-        { status: 403 }
+        { error: "Credenciais inválidas", errorCode: "INVALID" },
+        { status: 401 }
       );
     }
 
