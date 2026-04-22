@@ -1,26 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { maskCNPJ } from "@/lib/utils";
 
 interface LoginFormProps {
   onSuccess: (data: { firstAccess: boolean; password: string }) => void;
   onForgotPassword: () => void;
+  onBlocked?: (cnpj: string) => void;
 }
 
-export default function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
+type ErrorKind = null | "cnpj-not-found" | "wrong-password" | "cnpj-invalid" | "generic" | "offline";
+
+export default function LoginForm({ onSuccess, onForgotPassword, onBlocked }: LoginFormProps) {
   const [cnpj, setCnpj] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState("");
+  const [errorKind, setErrorKind] = useState<ErrorKind>(null);
+  const [errorText, setErrorText] = useState("");
+  const [attempts, setAttempts] = useState(0);
   const [loading, setLoading] = useState(false);
   const [ssoMsg, setSsoMsg] = useState("");
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    if (!cnpj || !password) { setError("CNPJ e senha são obrigatórios"); return; }
+    setErrorKind(null);
+    setErrorText("");
+
+    if (!navigator.onLine) {
+      setErrorKind("offline");
+      return;
+    }
+    if (!cnpj || !password) {
+      setErrorKind("generic");
+      setErrorText("CNPJ e senha são obrigatórios");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
@@ -30,15 +59,63 @@ export default function LoginForm({ onSuccess, onForgotPassword }: LoginFormProp
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "CNPJ ou senha incorretos");
+        const code = data.errorCode as string | undefined;
+        if (code === "CNPJ_NOT_FOUND" || code === "CNPJ_INVALID") {
+          setErrorKind("cnpj-not-found");
+        } else if (code === "WRONG_PASSWORD") {
+          const next = attempts + 1;
+          setAttempts(next);
+          if (next >= 5 && onBlocked) {
+            onBlocked(cnpj);
+            return;
+          }
+          setErrorKind("wrong-password");
+        } else if (res.status === 429) {
+          if (onBlocked) {
+            onBlocked(cnpj);
+            return;
+          }
+          setErrorKind("generic");
+          setErrorText("Muitas tentativas. Tente novamente em 15 minutos.");
+        } else {
+          setErrorKind("generic");
+          setErrorText(data.error ?? "CNPJ ou senha incorretos");
+        }
         return;
       }
       onSuccess({ firstAccess: !!data.firstAccess, password });
     } catch {
-      setError("Erro ao conectar com o servidor");
+      setErrorKind("offline");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!isOnline) {
+    return (
+      <>
+        <div
+          style={{
+            width: 56, height: 56, borderRadius: 999,
+            background: "oklch(0.94 0.04 260)", color: "oklch(0.4 0.1 260)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 26, marginBottom: 18, border: "1px solid oklch(0.86 0.06 260)",
+          }}
+        >
+          ⚡
+        </div>
+        <h3>Você está offline</h3>
+        <p className="sub">Não conseguimos falar com o servidor. Verifique sua conexão e tente novamente.</p>
+        <div className="flex wrap" style={{ gap: 10, marginTop: 10 }}>
+          <button
+            className="btn btn--ink"
+            onClick={() => setIsOnline(navigator.onLine)}
+          >
+            ↻ Tentar de novo
+          </button>
+        </div>
+      </>
+    );
   }
 
   return (
@@ -87,39 +164,75 @@ export default function LoginForm({ onSuccess, onForgotPassword }: LoginFormProp
         <div style={{ flex: 1, height: 1, background: "var(--line-ink)" }} />
       </div>
 
-      <div className="hint">
-        <span>✦</span>
-        <div>
-          <strong>1º acesso?</strong> Use o <strong>CNPJ</strong> como usuário <em>e</em> como senha.
-          No próximo passo, você troca tudo.
+      {errorKind === "cnpj-not-found" && (
+        <div className="alert alert--danger">
+          <span className="alert-icon">!</span>
+          <div>
+            <div className="alert-title">CNPJ não encontrado</div>
+            <div className="alert-msg">Não achamos esse CNPJ na base. Confira a digitação ou <Link href="/#planos" style={{ color: "var(--ink)", fontWeight: 500, textDecoration: "underline" }}>contrate um plano</Link>.</div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {errorKind === "wrong-password" && (
+        <div className="alert alert--warn">
+          <span className="alert-icon">⚠</span>
+          <div>
+            <div className="alert-title">Senha incorreta</div>
+            <div className="alert-msg">Tentativa <strong>{attempts} de 5</strong>. Após 5 erros a conta é bloqueada por 15 minutos.</div>
+          </div>
+        </div>
+      )}
+
+      {errorKind === "generic" && errorText && (
+        <div className="alert alert--danger">
+          <span className="alert-icon">!</span>
+          <div><div className="alert-title">{errorText}</div></div>
+        </div>
+      )}
+
+      {errorKind !== "cnpj-not-found" && errorKind !== "wrong-password" && (
+        <div className="hint">
+          <span>✦</span>
+          <div>
+            <strong>1º acesso?</strong> Use o <strong>CNPJ</strong> como usuário <em>e</em> como senha.
+            No próximo passo, você troca tudo.
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleLogin} style={{ marginTop: 14 }}>
         <div className="field">
           <label className="label">CNPJ ou e-mail</label>
           <input
-            className="input"
+            className={`input${errorKind === "cnpj-not-found" ? " input--err" : ""}`}
             placeholder="00.000.000/0000-00"
             value={cnpj}
             onChange={(e) => setCnpj(maskCNPJ(e.target.value))}
             maxLength={18}
             autoComplete="username"
           />
+          {errorKind === "cnpj-not-found" && (
+            <div className="err-msg">Formato aceito, mas não está cadastrado.</div>
+          )}
         </div>
         <div className="field">
           <label className="label">Senha</label>
           <input
-            className="input"
+            className={`input${errorKind === "wrong-password" ? " input--err" : ""}`}
             type="password"
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
           />
-          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
-            No primeiro acesso, repita o CNPJ.
-          </div>
+          {errorKind === "wrong-password" ? (
+            <div className="err-msg">Não confere. Tente de novo ou recupere.</div>
+          ) : (
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
+              No primeiro acesso, repita o CNPJ.
+            </div>
+          )}
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
@@ -136,28 +249,21 @@ export default function LoginForm({ onSuccess, onForgotPassword }: LoginFormProp
           </button>
         </div>
 
-        {error && (
-          <div className="alert alert--danger" style={{ marginTop: 14, marginBottom: 0 }}>
-            <span className="alert-icon">!</span>
-            <div><div className="alert-title">{error}</div></div>
-          </div>
-        )}
-
         <button
           type="submit"
           className="btn btn--ink btn--block"
           style={{ marginTop: 20 }}
           disabled={loading}
         >
-          {loading ? "Entrando…" : "Entrar →"}
+          {loading ? "Entrando…" : errorKind === "wrong-password" ? "Tentar de novo" : "Entrar →"}
         </button>
       </form>
 
       <div className="divider ink" />
       <p style={{ fontSize: 12, color: "var(--muted)", textAlign: "center" }}>
-        Ainda não tem acesso?{" "}
-        <Link href="/contato" style={{ color: "var(--amber)", fontWeight: 500 }}>
-          Fale com seu gestor
+        Ainda não é assinante?{" "}
+        <Link href="/#planos" style={{ color: "var(--amber)", fontWeight: 500 }}>
+          Quero assinar →
         </Link>
       </p>
     </>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { coverBg, parseTags } from "@/lib/utils";
 
 interface ReadingHistoryItem {
@@ -196,6 +197,25 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
   // Newest 4: last items in the returned list (lower downloads = tend to be newer)
   const newBooks = books.slice(-4).reverse();
 
+  // "Recomendado pra você" — picks books adjacent to what user reads most.
+  // Falls back to a random-ish slice if no history.
+  const recommendedBooks = (() => {
+    if (!books.length) return [] as Book[];
+    const readCategories = new Set(history.map((h) => h.ebook.categoria).filter(Boolean) as string[]);
+    const readIds = new Set(history.map((h) => h.ebook.id));
+    const pool = books.filter((b) => !readIds.has(b.id));
+    if (readCategories.size > 0) {
+      const sorted = [...pool].sort((a, b) => {
+        const aMatch = readCategories.has(a.cat) ? 1 : 0;
+        const bMatch = readCategories.has(b.cat) ? 1 : 0;
+        return bMatch - aMatch;
+      });
+      return sorted.slice(0, 6);
+    }
+    return pool.slice(4, 10);
+  })();
+  const topReadCategory = history[0]?.ebook.categoria ?? null;
+
   return (
     <>
       <Header
@@ -269,6 +289,23 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
           </section>
         )}
 
+        {/* Recomendado pra você */}
+        {!query && activeCat === "Todos" && recommendedBooks.length > 0 && (
+          <section className="section" style={{ paddingTop: 0 }}>
+            <div className="section-head">
+              <h2 className="serif" style={{ fontSize: "var(--h3)" }}>Recomendado pra você</h2>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                {topReadCategory ? `com base em ${topReadCategory}` : "novidades selecionadas"}
+              </span>
+            </div>
+            <div className="grid-books">
+              {loading
+                ? Array.from({ length: 6 }).map((_, i) => <BookSkeleton key={i} />)
+                : recommendedBooks.map((b) => <BookCover key={b.id} book={b} />)}
+            </div>
+          </section>
+        )}
+
         {/* Recém-adicionados */}
         {!query && activeCat === "Todos" && (
           <section className="section" style={{ paddingTop: 0 }}>
@@ -323,15 +360,7 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
         </section>
       </main>
 
-      <footer className="ft">
-        <div className="container ft-inner">
-          <div>© Pixel Liber · EST. 2024</div>
-          <div style={{ display: "flex", gap: 14 }}>
-            <a href="#">Termos</a>
-            <a href="#">Privacidade</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

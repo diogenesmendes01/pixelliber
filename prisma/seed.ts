@@ -22,46 +22,158 @@ const EBOOKS = [
   { titulo: "Orçamento familiar", autor: "B. Reis", categoria: "Finanças", tags: JSON.stringify({ hue: 195, label: "finanças" }), descricao: "Planeje suas finanças familiares de forma prática e eficiente com este guia completo.", contadorDownloads: 185 },
 ];
 
+interface EmployeeSeed {
+  fullName: string;
+  email: string;
+  role: string;
+  department: string;
+  status: "active" | "pending" | "inactive";
+  lastLoginDaysAgo: number | null;
+  readingCount: number;
+}
+
+const EMPLOYEES: EmployeeSeed[] = [
+  { fullName: "Rafael Moura", email: "rafael@horizontelivros.com.br", role: "Gerente", department: "Vendas", status: "active", lastLoginDaysAgo: 1, readingCount: 5 },
+  { fullName: "Camila Souza", email: "camila@horizontelivros.com.br", role: "Vendedora", department: "Vendas", status: "active", lastLoginDaysAgo: 3, readingCount: 4 },
+  { fullName: "Thiago Alves", email: "thiago@horizontelivros.com.br", role: "Vendedor", department: "Vendas", status: "pending", lastLoginDaysAgo: null, readingCount: 0 },
+  { fullName: "Beatriz Nunes", email: "beatriz@horizontelivros.com.br", role: "Estoquista", department: "Operações", status: "active", lastLoginDaysAgo: 7, readingCount: 2 },
+  { fullName: "Paulo Reis", email: "paulo@horizontelivros.com.br", role: "—", department: "—", status: "inactive", lastLoginDaysAgo: 60, readingCount: 0 },
+];
+
+function daysAgo(n: number): Date {
+  return new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+}
+
 async function main() {
   console.log("Seeding database...");
 
-  const passwordHash = await bcrypt.hash("test123", 10);
+  // ============ COMPANY + ADMIN ============
+  const adminHash = await bcrypt.hash("test123", 10);
 
   const company = await prisma.company.upsert({
     where: { cnpj: "12345678000190" },
-    update: {},
+    update: { statusAssinatura: "ativa" },
     create: {
       cnpj: "12345678000190",
-      name: "Empresa Teste Pixel Liber",
-      email: "teste@pixelliber.com.br",
+      name: "Horizonte Livros",
+      email: "contato@horizontelivros.com.br",
       statusAssinatura: "ativa",
       user: {
         create: {
-          passwordHash,
-          name: "Usuário Teste",
-          email: "teste@pixelliber.com.br",
+          passwordHash: adminHash,
+          name: "Marina Castro",
+          email: "marina@horizontelivros.com.br",
           role: "ADMIN",
+          lastLoginAt: new Date(),
         },
       },
     },
     include: { user: true },
   });
-
   console.log(`Company: ${company.name} (${company.cnpj})`);
 
+  // ============ EBOOKS ============
   let ebookCount = 0;
+  const ebookIds: string[] = [];
   for (const ebook of EBOOKS) {
     const existing = await prisma.ebook.findFirst({ where: { titulo: ebook.titulo } });
-    if (!existing) {
-      await prisma.ebook.create({ data: ebook });
+    if (existing) {
+      ebookIds.push(existing.id);
+    } else {
+      const created = await prisma.ebook.create({ data: ebook });
+      ebookIds.push(created.id);
       ebookCount++;
     }
   }
   console.log(`Seeded ${ebookCount} new ebooks (${EBOOKS.length - ebookCount} already existed).`);
 
+  // ============ EMPLOYEES + READING HISTORY ============
+  let empCreated = 0;
+  for (const emp of EMPLOYEES) {
+    const existing = await prisma.user.findUnique({ where: { email: emp.email } });
+    if (existing) continue;
+
+    const pwHash = await bcrypt.hash("test123", 10);
+    // Note: User.companyId is @unique (só o admin tem). Funcionários ligam via Employee.companyId.
+    const user = await prisma.user.create({
+      data: {
+        email: emp.email,
+        name: emp.fullName,
+        passwordHash: pwHash,
+        role: "USER",
+        isActive: emp.status !== "inactive",
+        lastLoginAt: emp.lastLoginDaysAgo !== null ? daysAgo(emp.lastLoginDaysAgo) : null,
+      },
+    });
+
+    await prisma.employee.create({
+      data: {
+        fullName: emp.fullName,
+        corporateEmail: emp.email,
+        role: emp.role,
+        department: emp.department,
+        isActive: emp.status !== "inactive",
+        companyId: company.id,
+        userId: user.id,
+      },
+    });
+
+    // Reading history for active employees
+    for (let i = 0; i < emp.readingCount; i++) {
+      const ebookId = ebookIds[(i * 3 + empCreated * 2) % ebookIds.length];
+      const progressPct =
+        i === 0 ? 100 : i === 1 ? 72 : i === 2 ? 48 : 16 + Math.floor(Math.random() * 20);
+      const lastReadDays = (emp.lastLoginDaysAgo ?? 0) + i * 2;
+      try {
+        await prisma.readingHistory.create({
+          data: {
+            userId: user.id,
+            ebookId,
+            progressPct,
+            lastPage: Math.floor((progressPct / 100) * 268),
+            lastReadAt: daysAgo(lastReadDays),
+          },
+        });
+      } catch {
+        // unique constraint may fire on seed re-run; ignore
+      }
+    }
+
+    empCreated++;
+  }
+  console.log(`Created ${empCreated} new employees with reading history.`);
+
+  // Admin reading history (Marina)
+  if (company.user) {
+    const marinaId = company.user.id;
+    const marinaBooks = [
+      { pct: 100, daysAgo: 2 },
+      { pct: 58, daysAgo: 1 },
+      { pct: 22, daysAgo: 0 },
+    ];
+    for (let i = 0; i < marinaBooks.length; i++) {
+      const { pct, daysAgo: d } = marinaBooks[i];
+      const ebookId = ebookIds[i];
+      try {
+        await prisma.readingHistory.upsert({
+          where: { userId_ebookId: { userId: marinaId, ebookId } },
+          update: { progressPct: pct, lastPage: Math.floor((pct / 100) * 268), lastReadAt: daysAgo(d) },
+          create: {
+            userId: marinaId,
+            ebookId,
+            progressPct: pct,
+            lastPage: Math.floor((pct / 100) * 268),
+            lastReadAt: daysAgo(d),
+          },
+        });
+      } catch { /* noop */ }
+    }
+  }
+
   console.log("\nTest credentials:");
-  console.log("  CNPJ: 12.345.678/0001-90");
-  console.log("  Senha: test123");
+  console.log("  Admin CNPJ: 12.345.678/0001-90");
+  console.log("  Admin senha: test123");
+  console.log("  Funcionários: {primeiro-nome}@horizontelivros.com.br / test123");
 }
 
 main()

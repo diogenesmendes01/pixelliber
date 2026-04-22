@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Toast from "@/components/Toast";
 import { initials, formatCNPJ } from "@/lib/utils";
 import { useLogout } from "@/hooks/useLogout";
 import ProfileForm from "./_components/ProfileForm";
 import PasswordForm from "./_components/PasswordForm";
+import TwoFASetup from "./_components/TwoFASetup";
+import Logo from "@/components/Logo";
 
 interface User {
   id: string;
@@ -40,6 +42,38 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
   const [toast, setToast] = useState("");
   const [twoFA, setTwoFA] = useState(user.twoFaEnabled);
   const [notif, setNotif] = useState(parseNotif(user.notifSettings));
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
+  const [twoFaSetupOpen, setTwoFaSetupOpen] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = localStorage.getItem(`pl-avatar-${user.id}`);
+    if (saved) setAvatarDataUrl(saved);
+  }, [user.id]);
+
+  function onAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      setToast("Arquivo grande demais (máx. 1MB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = reader.result as string;
+      setAvatarDataUrl(url);
+      localStorage.setItem(`pl-avatar-${user.id}`, url);
+      setToast("Foto atualizada ✓");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeAvatar() {
+    setAvatarDataUrl(null);
+    localStorage.removeItem(`pl-avatar-${user.id}`);
+    setToast("Foto removida");
+  }
 
   const cnpj = formatCNPJ(user.company?.cnpj ?? null);
 
@@ -49,10 +83,7 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
     <div className="console">
       {/* Sidebar */}
       <aside className="console-side">
-        <Link href="/vitrine" className="logo">
-          <span className="logo-dot" />
-          <span>Pixel Liber</span>
-        </Link>
+        <Logo href="/vitrine" className="logo" size="sm" style={{ marginBottom: 20 }} />
         <div className="side-lbl">Leitura</div>
         <Link href="/vitrine">📚 Catálogo</Link>
         {isAdmin && (
@@ -90,9 +121,28 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
           <div className="flex" style={{ gap: 16, marginBottom: 20 }}>
             <div
               className="avatar"
-              style={{ width: 64, height: 64, fontSize: 22, background: "linear-gradient(150deg,oklch(0.6 0.12 38),oklch(0.4 0.1 38))", color: "#fff" }}
+              style={{
+                width: 64,
+                height: 64,
+                fontSize: 22,
+                background: avatarDataUrl
+                  ? "transparent"
+                  : "linear-gradient(150deg,oklch(0.6 0.12 38),oklch(0.4 0.1 38))",
+                color: "#fff",
+                overflow: "hidden",
+                position: "relative",
+              }}
             >
-              {initials(user.name)}
+              {avatarDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarDataUrl}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                initials(user.name)
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <div className="flex" style={{ gap: 8, flexWrap: "wrap" }}>
@@ -104,6 +154,29 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
               <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
                 {user.email} · {user.company?.name}
               </div>
+            </div>
+            <div className="flex" style={{ gap: 6 }}>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                onChange={onAvatarChange}
+                style={{ display: "none" }}
+              />
+              <button
+                className="icon-btn-ink"
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                {avatarDataUrl ? "Trocar foto" : "Adicionar foto"}
+              </button>
+              {avatarDataUrl && (
+                <button
+                  className="icon-btn-ink danger"
+                  onClick={removeAvatar}
+                >
+                  Remover
+                </button>
+              )}
             </div>
           </div>
 
@@ -142,16 +215,56 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
             <div
               className={`toggle${twoFA ? " on" : ""}`}
               onClick={async () => {
-                const next = !twoFA;
-                setTwoFA(next);
+                if (!twoFA) {
+                  // Open setup flow; only activate after success
+                  setTwoFaSetupOpen(true);
+                  return;
+                }
+                setTwoFA(false);
                 await fetch("/api/users/settings", {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ twoFaEnabled: next }),
+                  body: JSON.stringify({ twoFaEnabled: false }),
                 });
-                setToast(next ? "2FA ativado" : "2FA desativado");
+                setToast("2FA desativado");
               }}
             />
+          </div>
+
+          {/* Dispositivos */}
+          <div style={{ padding: "14px 0", borderTop: "1px solid var(--line-ink)" }}>
+            <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 10 }}>Dispositivos conectados</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "10px 12px",
+                  background: "rgba(0,0,0,0.02)",
+                  border: "1px solid var(--line-ink)",
+                  borderRadius: 8,
+                  gap: 10,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <div className="flex" style={{ gap: 6 }}>
+                    <strong style={{ fontSize: 13 }}>Este navegador</strong>
+                    <span className="chip chip--gold" style={{ fontSize: 9, padding: "2px 7px" }}>este dispositivo</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>Sessão ativa agora</div>
+                </div>
+                <button className="icon-btn-ink" disabled style={{ opacity: 0.4 }}>—</button>
+              </div>
+            </div>
+            <button
+              className="btn btn--ghost btn--sm"
+              style={{ color: "var(--ink)", borderColor: "rgba(0,0,0,0.2)", marginTop: 10 }}
+              onClick={handleLogout}
+            >
+              Sair desta sessão
+            </button>
           </div>
         </div>
 
@@ -212,6 +325,23 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
           </button>
         </div>
       </main>
+
+      {twoFaSetupOpen && (
+        <TwoFASetup
+          email={user.email ?? ""}
+          onClose={() => setTwoFaSetupOpen(false)}
+          onComplete={async () => {
+            setTwoFA(true);
+            setTwoFaSetupOpen(false);
+            await fetch("/api/users/settings", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ twoFaEnabled: true }),
+            });
+            setToast("2FA ativado ✓");
+          }}
+        />
+      )}
 
       {toast && <Toast msg={toast} onDone={() => setToast("")} />}
     </div>

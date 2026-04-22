@@ -1,101 +1,230 @@
+import Link from "next/link";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import Subscribe from "@/components/Subscribe";
-import ReadAnywhere from "@/components/ReadAnywhere";
-import DownloadSection from "@/components/DownloadSection";
-import FAQ from "@/components/FAQ";
-
-const BOOK_ROWS = [
-  {
-    title: "Destaques da semana",
-    books: [
-      { hue: 38, tag: "finanças", title: "Pai rico, pai pobre", author: "R. Kiyosaki" },
-      { hue: 20, tag: "vendas", title: "Copywriting: destruindo objeções", author: "A. Costa" },
-      { hue: 50, tag: "finanças", title: "Desenvolva seu QI financeiro", author: "T. Vaz" },
-      { hue: 280, tag: "marketing", title: "Do ponto zero à conversão", author: "L. Souza" },
-      { hue: 160, tag: "mente", title: "Como parar de se preocupar", author: "D. Ramos" },
-      { hue: 0, tag: "marketing", title: "Autoridade no YouTube", author: "C. Rocha" },
-      { hue: 210, tag: "negócios", title: "O negócio do coaching", author: "P. Alves" },
-      { hue: 12, tag: "vendas", title: "Segredo da persuasão", author: "J. Leal" },
-    ],
-  },
-  {
-    title: "Finanças pessoais",
-    books: [
-      { hue: 38, tag: "finanças", title: "Pai rico, pai pobre", author: "R. Kiyosaki" },
-      { hue: 50, tag: "finanças", title: "Desenvolva seu QI financeiro", author: "T. Vaz" },
-      { hue: 120, tag: "finanças", title: "Organizze: saia do vermelho", author: "P. Moura" },
-      { hue: 100, tag: "finanças", title: "Encontrando dinheiro", author: "M. Nunes" },
-      { hue: 260, tag: "finanças", title: "Liberte o gigante financeiro", author: "A. Lopes" },
-      { hue: 195, tag: "finanças", title: "Orçamento familiar", author: "B. Reis" },
-    ],
-  },
-  {
-    title: "Marketing & vendas",
-    books: [
-      { hue: 0, tag: "marketing", title: "Autoridade no YouTube", author: "C. Rocha" },
-      { hue: 280, tag: "marketing", title: "Do ponto zero à conversão", author: "L. Souza" },
-      { hue: 330, tag: "marketing", title: "TikTok Marketing", author: "V. Silva" },
-      { hue: 20, tag: "vendas", title: "Copywriting: destruindo objeções", author: "A. Costa" },
-      { hue: 12, tag: "vendas", title: "Segredo da persuasão", author: "J. Leal" },
-    ],
-  },
-];
-
-function BookCover({ book }: { book: (typeof BOOK_ROWS)[0]["books"][0] }) {
-  const bg = `linear-gradient(150deg, oklch(0.42 0.1 ${book.hue}), oklch(0.22 0.08 ${(book.hue + 30) % 360}))`;
-  return (
-    <a href="/login" className="cover" style={{ background: bg }} aria-label={`${book.title} — ${book.author}`}>
-      <span className="cover-tag">{book.tag}</span>
-      <span>
-        <span className="cover-title">{book.title}</span>
-        <span className="cover-author" style={{ display: "block" }}>{book.author}</span>
-      </span>
-    </a>
-  );
-}
+import Footer from "@/components/Footer";
+import BookCover from "@/components/BookCover";
+import ContactForm from "@/components/ContactForm";
+import { BOOKS, PLANS, booksByTag, booksByTags, booksWithNew } from "@/lib/books-data";
 
 export default function Home() {
+  const destaques = booksWithNew(BOOKS.slice(0, 10));
+  const financas = booksWithNew(booksByTag("finanças"));
+  const marketingVendas = booksWithNew(booksByTags(["marketing", "vendas"]));
+
   return (
     <>
       <Header active="home" role="guest" />
-      <main>
+      <main className="container">
         <Hero />
 
-        {BOOK_ROWS.map((row) => (
-          <section key={row.title} className="section" style={{ paddingTop: 0 }}>
-            <div className="container">
-              <div className="section-head">
-                <h2 className="serif" style={{ fontSize: "var(--h3)" }}>{row.title}</h2>
-                <a href="/vitrine" className="tag" style={{ cursor: "pointer" }}>
-                  Ver tudo →
-                </a>
-              </div>
-              <div className="row-scroll">
-                {row.books.map((book, i) => (
-                  <BookCover key={i} book={book} />
-                ))}
+        <section className="section">
+          <div className="section-head">
+            <h2 className="serif">Destaques da semana</h2>
+            <Link href="/vitrine" className="tag" style={{ cursor: "pointer" }}>
+              Ver tudo →
+            </Link>
+          </div>
+          <div className="row-scroll">
+            {destaques.map((book) => (
+              <BookCover key={book.id} book={book} />
+            ))}
+          </div>
+        </section>
+
+        <section className="section">
+          <div className="section-head">
+            <h2 className="serif">Finanças pessoais</h2>
+          </div>
+          <div className="row-scroll">
+            {financas.map((book) => (
+              <BookCover key={book.id} book={book} />
+            ))}
+          </div>
+        </section>
+
+        <section className="section">
+          <div className="section-head">
+            <h2 className="serif">Marketing &amp; vendas</h2>
+          </div>
+          <div className="row-scroll">
+            {marketingVendas.map((book) => (
+              <BookCover key={book.id} book={book} />
+            ))}
+          </div>
+        </section>
+
+        {/* ========== Como funciona ========== */}
+        <section className="section" id="como" style={{ padding: "60px 0" }}>
+          <div className="section-head">
+            <h2 className="serif">Como funciona</h2>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: 20,
+              marginTop: 12,
+            }}
+          >
+            <div
+              style={{
+                background: "var(--ink-2)",
+                border: "1px solid var(--line)",
+                borderRadius: 14,
+                padding: 24,
+              }}
+            >
+              <div className="tag gold-text">Passo 1</div>
+              <h3 className="serif" style={{ fontSize: 22, margin: "8px 0 6px" }}>
+                Contrate um plano
+              </h3>
+              <p style={{ color: "var(--muted)", margin: 0, fontSize: 13.5, lineHeight: 1.6 }}>
+                Escolha a quantidade de acessos. A gente cadastra sua empresa pelo CNPJ e libera em minutos.
+              </p>
+            </div>
+            <div
+              style={{
+                background: "var(--ink-2)",
+                border: "1px solid var(--line)",
+                borderRadius: 14,
+                padding: 24,
+              }}
+            >
+              <div className="tag gold-text">Passo 2</div>
+              <h3 className="serif" style={{ fontSize: 22, margin: "8px 0 6px" }}>
+                Convide a equipe
+              </h3>
+              <p style={{ color: "var(--muted)", margin: 0, fontSize: 13.5, lineHeight: 1.6 }}>
+                Cada funcionário recebe um convite por e-mail. Admin gerencia tudo pelo painel.
+              </p>
+            </div>
+            <div
+              style={{
+                background: "var(--ink-2)",
+                border: "1px solid var(--line)",
+                borderRadius: 14,
+                padding: 24,
+              }}
+            >
+              <div className="tag gold-text">Passo 3</div>
+              <h3 className="serif" style={{ fontSize: 22, margin: "8px 0 6px" }}>
+                Leia em qualquer lugar
+              </h3>
+              <p style={{ color: "var(--muted)", margin: 0, fontSize: 13.5, lineHeight: 1.6 }}>
+                480+ títulos curados. Leitura online, offline, e relatórios de uso pro admin.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ========== Planos (faixa clara) ========== */}
+        <section
+          className="section"
+          id="planos"
+          style={{
+            padding: "60px 0",
+            background: "var(--paper)",
+            color: "var(--ink)",
+            margin: "0 calc(-1 * var(--gutter))",
+            paddingLeft: "var(--gutter)",
+            paddingRight: "var(--gutter)",
+          }}
+        >
+          <div style={{ maxWidth: "var(--maxw)", margin: "0 auto" }}>
+            <span className="tag gold-text">Planos</span>
+            <h2
+              className="serif"
+              style={{ fontSize: "var(--h2)", margin: "6px 0 8px", color: "var(--ink)" }}
+            >
+              Um plano pra cada tamanho
+            </h2>
+            <p style={{ color: "var(--muted)", margin: "0 0 24px" }}>
+              Mensal, sem fidelidade. Troque quando quiser.
+            </p>
+
+            <div className="plan-grid">
+              {PLANS.map((p) => (
+                <div key={p.id} className={`plan-card${p.destaque ? " destaque" : ""}`}>
+                  {p.destaque && <span className="ribbon">recomendado</span>}
+                  <div className="nome">{p.nome}</div>
+                  <div className="preco">
+                    {p.preco ? `R$ ${p.preco}` : "—"}
+                    <small> /{p.periodo}</small>
+                  </div>
+                  <div className="period">
+                    {p.usuarios === "ilimitado" ? "acessos ilimitados" : `até ${p.usuarios} acessos`}
+                  </div>
+                  <ul>
+                    {p.features.map((f, i) => (
+                      <li key={i}>{f}</li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/login"
+                    className={`btn ${p.destaque ? "btn--gold" : "btn--ink"} btn--sm btn--block`}
+                  >
+                    {p.id === "custom" ? "Falar com vendas" : "Começar →"}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ========== Contato ========== */}
+        <section className="section" id="contato" style={{ padding: "60px 0" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 40,
+              alignItems: "start",
+            }}
+            className="contato-grid"
+          >
+            <div>
+              <span className="tag gold-text">Contato</span>
+              <h2 className="serif" style={{ fontSize: "var(--h2)", margin: "6px 0 14px" }}>
+                Fale com a gente
+              </h2>
+              <p
+                style={{
+                  color: "var(--muted)",
+                  fontSize: 14,
+                  lineHeight: 1.7,
+                  margin: "0 0 20px",
+                }}
+              >
+                Dúvidas sobre o plano, acervo ou integração com o RH da sua empresa? Mandamos uma resposta em até 1 dia útil.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13.5 }}>
+                <div>
+                  <div className="tag">E-mail comercial</div>
+                  <div style={{ marginTop: 2 }}>contato@pixelliber.com.br</div>
+                </div>
+                <div>
+                  <div className="tag">Suporte</div>
+                  <div style={{ marginTop: 2 }}>suporte@pixelliber.com.br</div>
+                </div>
+                <div>
+                  <div className="tag">Horário</div>
+                  <div style={{ marginTop: 2 }}>Seg–Sex · 9h às 18h (BRT)</div>
+                </div>
               </div>
             </div>
-          </section>
-        ))}
 
-        <Subscribe />
-        <ReadAnywhere />
-        <DownloadSection />
-        <FAQ />
+            <ContactForm />
+          </div>
+        </section>
       </main>
 
-      <footer className="ft">
-        <div className="container ft-inner">
-          <div>© Pixel Liber · EST. 2024</div>
-          <div style={{ display: "flex", gap: 14 }}>
-            <a href="#">Termos</a>
-            <a href="#">Privacidade</a>
-            <a href="/contato">Contato</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
+
+      <style>{`
+        @media (max-width: 720px){
+          .contato-grid{grid-template-columns:1fr !important}
+        }
+      `}</style>
     </>
   );
 }

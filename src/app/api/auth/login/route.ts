@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
     const cnpjCleaned = cleanCNPJ(cnpj);
     if (!validateCNPJ(cnpjCleaned)) {
       return NextResponse.json(
-        { error: "CNPJ ou senha incorretos" },
-        { status: 401 }
+        { error: "CNPJ inválido", errorCode: "CNPJ_INVALID" },
+        { status: 400 }
       );
     }
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     if (!company || !company.user) {
       return NextResponse.json(
-        { error: "CNPJ ou senha incorretos" },
+        { error: "CNPJ não encontrado", errorCode: "CNPJ_NOT_FOUND" },
         { status: 401 }
       );
     }
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const validPassword = await bcrypt.compare(password, company.user.passwordHash);
     if (!validPassword) {
       return NextResponse.json(
-        { error: "CNPJ ou senha incorretos" },
+        { error: "Senha incorreta", errorCode: "WRONG_PASSWORD" },
         { status: 401 }
       );
     }
