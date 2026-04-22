@@ -36,6 +36,15 @@ export async function POST(request: NextRequest) {
     let company = null;
 
     if (isEmail) {
+      // Validação de formato antes de consultar DB
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(identifier)) {
+        return NextResponse.json(
+          { error: "E-mail inválido", errorCode: "EMAIL_INVALID" },
+          { status: 400 }
+        );
+      }
+
       // Login via e-mail
       user = await prisma.user.findUnique({
         where: { email: identifier.toLowerCase() },
