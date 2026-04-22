@@ -50,11 +50,12 @@ async function main() {
   // ============ COMPANY + ADMIN ============
   const adminHash = await bcrypt.hash("test123", 10);
 
+  // CNPJ válido: 53.250.036/9463-36 (digits verificadores corretos)
   const company = await prisma.company.upsert({
-    where: { cnpj: "12345678000190" },
+    where: { cnpj: "53250036946336" },
     update: { statusAssinatura: "ativa" },
     create: {
-      cnpj: "12345678000190",
+      cnpj: "53250036946336",
       name: "Horizonte Livros",
       email: "contato@horizontelivros.com.br",
       statusAssinatura: "ativa",
@@ -171,7 +172,7 @@ async function main() {
   }
 
   console.log("\nTest credentials:");
-  console.log("  Admin CNPJ: 12.345.678/0001-90");
+  console.log("  Admin CNPJ: 53.250.036/9463-36");
   console.log("  Admin senha: test123");
   console.log("  Funcionários: {primeiro-nome}@horizontelivros.com.br / test123");
 }
