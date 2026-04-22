@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as any).id;
+  const userId = (session.user as any).userId;
   const csrfError = await validateCsrfRequest(req, userId);
   if (csrfError) return csrfError;
 
@@ -77,7 +77,7 @@ export async function DELETE(req: NextRequest, { params }: Context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as any).id;
+  const userId = (session.user as any).userId;
   const csrfError = await validateCsrfRequest(req, userId);
   if (csrfError) return csrfError;
 

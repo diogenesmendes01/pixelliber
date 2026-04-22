@@ -61,6 +61,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const firstAccess = company.user.lastLoginAt === null;
+
+    // Update lastLoginAt
+    await prisma.user.update({
+      where: { id: company.user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
     // Generate JWT
     const token = await signToken(
       {
@@ -68,13 +76,18 @@ export async function POST(request: NextRequest) {
         companyId: company.id,
         cnpj: cnpjCleaned,
         name: company.name,
+        role: company.user.role,
       },
       !!rememberMe
     );
 
     // Set HTTP-only cookie
     const response = NextResponse.json(
-      { message: "Login realizado com sucesso", company: { name: company.name, cnpj: company.cnpj } },
+      {
+        message: "Login realizado com sucesso",
+        firstAccess,
+        company: { name: company.name, cnpj: company.cnpj },
+      },
       { status: 200 }
     );
 

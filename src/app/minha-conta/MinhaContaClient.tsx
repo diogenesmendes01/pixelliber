@@ -46,11 +46,68 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
   const [pwFormOpen, setPwFormOpen] = useState(false);
   const [twoFA, setTwoFA] = useState(false);
 
+  // Profile form state
+  const [name, setName] = useState(user.name ?? "");
+  const [email, setEmail] = useState(user.email ?? "");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password form state
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [savingPw, setSavingPw] = useState(false);
+
   const cnpj = formatCNPJ(user.company?.cnpj ?? null);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
+  }
+
+  async function handleSaveProfile() {
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToast(data.error || "Erro ao salvar perfil");
+      } else {
+        setToast("Dados salvos ✓");
+      }
+    } catch {
+      setToast("Erro de conexão");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function handleSavePassword() {
+    if (newPw !== confirmPw) { setToast("As senhas não coincidem"); return; }
+    if (newPw.length < 8) { setToast("A nova senha deve ter pelo menos 8 caracteres"); return; }
+    setSavingPw(true);
+    try {
+      const res = await fetch("/api/users/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw, confirmPassword: confirmPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToast(data.error || "Erro ao alterar senha");
+      } else {
+        setToast("Senha atualizada ✓");
+        setPwFormOpen(false);
+        setCurrentPw(""); setNewPw(""); setConfirmPw("");
+      }
+    } catch {
+      setToast("Erro de conexão");
+    } finally {
+      setSavingPw(false);
+    }
   }
 
   return (
@@ -63,7 +120,6 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
         </Link>
         <div className="side-lbl">Leitura</div>
         <Link href="/vitrine">📚 Catálogo</Link>
-        <Link href="/vitrine">⟳ Continuar lendo</Link>
         {isAdmin && (
           <>
             <div className="side-lbl">Administração</div>
@@ -119,14 +175,20 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
           <h3>Dados pessoais</h3>
           <div className="card-sub">Como aparece na plataforma e em confirmações por e-mail.</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
-            <div><label className="label">Nome completo</label><input className="input" defaultValue={user.name ?? ""} /></div>
-            <div><label className="label">E-mail</label><input className="input" type="email" defaultValue={user.email ?? ""} /></div>
-            <div><label className="label">Telefone</label><input className="input" placeholder="(11) 9xxxx-xxxx" /></div>
-            <div><label className="label">Cargo</label><input className="input" placeholder="Administrador" /></div>
+            <div>
+              <label className="label">Nome completo</label>
+              <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">E-mail</label>
+              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
           </div>
           <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button className="btn btn--ghost btn--sm" style={{ color: "var(--ink)", borderColor: "rgba(0,0,0,0.2)" }} onClick={() => setToast("Nada alterado")}>Cancelar</button>
-            <button className="btn btn--ink btn--sm" onClick={() => setToast("Dados salvos ✓")}>Salvar alterações</button>
+            <button className="btn btn--ghost btn--sm" style={{ color: "var(--ink)", borderColor: "rgba(0,0,0,0.2)" }} onClick={() => { setName(user.name ?? ""); setEmail(user.email ?? ""); }}>Cancelar</button>
+            <button className="btn btn--ink btn--sm" onClick={handleSaveProfile} disabled={savingProfile}>
+              {savingProfile ? "Salvando…" : "Salvar alterações"}
+            </button>
           </div>
         </div>
 
@@ -137,7 +199,10 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
             <div><label className="label">CNPJ</label><input className="input" value={cnpj} disabled style={{ opacity: 0.6 }} readOnly /></div>
             <div><label className="label">Razão social</label><input className="input" defaultValue={user.company?.name ?? ""} disabled style={{ opacity: 0.6 }} /></div>
-            <div><label className="label">Nome fantasia</label><input className="input" defaultValue={user.company?.name ?? ""} /></div>
+            <div>
+              <label className="label">Status da assinatura</label>
+              <input className="input" value={user.company?.statusAssinatura ?? "—"} disabled style={{ opacity: 0.6 }} readOnly />
+            </div>
           </div>
         </div>
 
@@ -157,14 +222,16 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
           {pwFormOpen && (
             <div style={{ padding: "14px 0", borderTop: "1px solid var(--line-ink)" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
-                <div><label className="label">Senha atual</label><input className="input" type="password" placeholder="••••••••" /></div>
+                <div><label className="label">Senha atual</label><input className="input" type="password" placeholder="••••••••" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} /></div>
                 <div />
-                <div><label className="label">Nova senha</label><input className="input" type="password" placeholder="••••••••" /></div>
-                <div><label className="label">Confirmar nova senha</label><input className="input" type="password" placeholder="••••••••" /></div>
+                <div><label className="label">Nova senha</label><input className="input" type="password" placeholder="••••••••" value={newPw} onChange={(e) => setNewPw(e.target.value)} /></div>
+                <div><label className="label">Confirmar nova senha</label><input className="input" type="password" placeholder="••••••••" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} /></div>
               </div>
               <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button className="btn btn--ghost btn--sm" style={{ color: "var(--ink)", borderColor: "rgba(0,0,0,0.2)" }} onClick={() => setPwFormOpen(false)}>Cancelar</button>
-                <button className="btn btn--ink btn--sm" onClick={() => { setPwFormOpen(false); setToast("Senha atualizada ✓"); }}>Salvar nova senha</button>
+                <button className="btn btn--ghost btn--sm" style={{ color: "var(--ink)", borderColor: "rgba(0,0,0,0.2)" }} onClick={() => { setPwFormOpen(false); setCurrentPw(""); setNewPw(""); setConfirmPw(""); }}>Cancelar</button>
+                <button className="btn btn--ink btn--sm" onClick={handleSavePassword} disabled={savingPw}>
+                  {savingPw ? "Salvando…" : "Salvar nova senha"}
+                </button>
               </div>
             </div>
           )}

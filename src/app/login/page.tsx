@@ -87,12 +87,11 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const rawCnpj = cnpj.replace(/[^\d]/g, "");
-        if (password === rawCnpj || data?.firstAccess) {
-          setStep("primeiro");
-        } else {
-          setError(data.error ?? "CNPJ ou senha incorretos");
-        }
+        setError(data.error ?? "CNPJ ou senha incorretos");
+        return;
+      }
+      if (data.firstAccess) {
+        setStep("primeiro");
         return;
       }
       router.push("/vitrine");

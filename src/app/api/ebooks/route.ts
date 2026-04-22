@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     } else if (sort === "data") {
       orderBy.dataPublicacao = ordem;
     } else {
-      orderBy.destaque = "desc";
+      orderBy.contadorDownloads = "desc";
     }
 
     const ebooks = await prisma.ebook.findMany({
