@@ -2,15 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-function formatCNPJ(value: string): string {
-  const d = value.replace(/[^\d]/g, "").slice(0, 14);
-  return d
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4")
-    .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5");
-}
+import { maskCNPJ } from "@/lib/utils";
 
 interface LoginFormProps {
   onSuccess: (data: { firstAccess: boolean; password: string }) => void;
@@ -110,7 +102,7 @@ export default function LoginForm({ onSuccess, onForgotPassword }: LoginFormProp
             className="input"
             placeholder="00.000.000/0000-00"
             value={cnpj}
-            onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
+            onChange={(e) => setCnpj(maskCNPJ(e.target.value))}
             maxLength={18}
             autoComplete="username"
           />
