@@ -9,16 +9,8 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      style={{
-        color: "#7F7878",
-        fontSize: "14px",
-        textDecoration: "underline",
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        padding: 0,
-      }}
-      className="transition hover:opacity-80"
+      className="btn btn--ghost"
+      style={{ justifyContent: "center", fontSize: "var(--fs-sm)", color: "var(--muted)" }}
     >
       Sair da conta
     </button>
