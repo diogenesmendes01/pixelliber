@@ -9,7 +9,21 @@ export default async function VitrinePage() {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.userId },
-    include: { company: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      twoFaEnabled: true,
+      notifSettings: true,
+      company: {
+        select: {
+          name: true,
+          cnpj: true,
+          statusAssinatura: true,
+        },
+      },
+    },
   });
   if (!dbUser) redirect("/login");
   if (dbUser.company?.statusAssinatura !== "ativa") redirect("/acesso-bloqueado");

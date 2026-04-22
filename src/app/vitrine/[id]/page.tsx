@@ -16,7 +16,21 @@ export default async function EbookDetailPage({
   const [dbUser, ebook] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.userId },
-      include: { company: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        twoFaEnabled: true,
+        notifSettings: true,
+        company: {
+          select: {
+            name: true,
+            cnpj: true,
+            statusAssinatura: true,
+          },
+        },
+      },
     }),
     prisma.ebook.findUnique({ where: { id } }),
   ]);

@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import path from "path";
-import { readFile } from "fs/promises";
+import { createReadStream } from "fs";
+import { stat } from "fs/promises";
+import { Readable } from "stream";
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +23,16 @@ export async function GET(
   // Verify active subscription
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.userId },
-    include: { company: true },
+    select: {
+      id: true,
+      company: {
+        select: {
+          name: true,
+          cnpj: true,
+          statusAssinatura: true,
+        },
+      },
+    },
   });
   if (dbUser?.company?.statusAssinatura !== "ativa") {
     return NextResponse.json({ error: "Assinatura inativa." }, { status: 403 });
@@ -45,21 +56,22 @@ export async function GET(
   const pdfFilename = ebook.pdf ?? `${id}.pdf`;
   const pdfPath = path.join(process.cwd(), "public", pdfFilename.startsWith("/") ? pdfFilename.slice(1) : pdfFilename);
 
-  try {
-    const pdfBuffer = await readFile(pdfPath);
-    const filename = path.basename(pdfFilename);
-
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": isDownload
-          ? `attachment; filename="${filename}"`
-          : `inline; filename="${filename}"`,
-        "Content-Length": pdfBuffer.byteLength.toString(),
-        "Cache-Control": "private, no-cache, no-store, must-revalidate",
-      },
-    });
-  } catch {
+  const fileStat = await stat(pdfPath).catch(() => null);
+  if (!fileStat) {
     return NextResponse.json({ error: "PDF não encontrado." }, { status: 404 });
   }
+
+  const nodeStream = createReadStream(pdfPath);
+  const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream;
+
+  return new NextResponse(webStream, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Length": String(fileStat.size),
+      "Content-Disposition": isDownload
+        ? `attachment; filename="${ebook.id}.pdf"`
+        : `inline; filename="${ebook.id}.pdf"`,
+      "Cache-Control": "private, no-cache, no-store, must-revalidate",
+    },
+  });
 }

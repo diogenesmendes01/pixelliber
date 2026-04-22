@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import { coverBg, parseTags } from "@/lib/utils";
 
 interface ReadingHistoryItem {
   id: string;
@@ -66,9 +67,6 @@ function parseBook(e: EbookRaw): Book {
 
 const CATS = ["Todos", "Finanças", "Marketing", "Mente", "Negócios", "Vendas"];
 
-function coverBg(hue: number) {
-  return `linear-gradient(150deg, oklch(0.42 0.1 ${hue}), oklch(0.22 0.08 ${(hue + 30) % 360}))`;
-}
 
 function BookCover({ book, small }: { book: Book; small?: boolean }) {
   return (
@@ -97,14 +95,7 @@ function BookSkeleton({ small }: { small?: boolean }) {
 }
 
 function ContinueCard({ item }: { item: ReadingHistoryItem }) {
-  const { hue, label } = (() => {
-    try {
-      const t = JSON.parse(item.ebook.tags ?? "{}");
-      return { hue: t.hue ?? 38, label: t.label ?? "geral" };
-    } catch {
-      return { hue: 38, label: "geral" };
-    }
-  })();
+  const { hue, label } = parseTags(item.ebook.tags);
 
   return (
     <Link href={`/vitrine/${item.ebook.id}`} className="continue-card" style={{ textDecoration: "none" }}>

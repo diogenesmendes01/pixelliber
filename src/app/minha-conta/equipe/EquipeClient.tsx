@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Toast from "@/components/Toast";
 
 type Employee = {
   id: string;
@@ -19,14 +20,6 @@ interface Props {
   userName: string | null;
 }
 
-function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
-  setTimeout(onDone, 3000);
-  return (
-    <div className="toast-slot">
-      <div className="toast">{msg}</div>
-    </div>
-  );
-}
 
 export default function EquipeClient({ companyName, userName }: Props) {
   const [employees, setEmployees] = useState<Employee[]>([]);

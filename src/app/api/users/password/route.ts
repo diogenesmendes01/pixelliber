@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { checkLoginRateLimit, getRateLimitResponse } from "@/lib/rate-limit";
 
 function csrfCheck(req: NextRequest): boolean {
   const origin = req.headers.get("origin") || req.headers.get("referer");
@@ -18,7 +19,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as any).userId;
+  const { allowed, resetAt } = checkLoginRateLimit(req);
+  if (!allowed) return getRateLimitResponse(resetAt);
+
+  const userId = session.user.userId;
   const body = await req.json();
   const { currentPassword, newPassword, confirmPassword } = body;
 
@@ -36,9 +40,10 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  if (newPassword.length < 8) {
+  const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
+  if (!passwordRegex.test(newPassword)) {
     return NextResponse.json(
-      { error: "A nova senha deve ter pelo menos 8 caracteres" },
+      { error: "A senha deve ter pelo menos 8 caracteres, uma letra maiúscula e um número." },
       { status: 400 }
     );
   }

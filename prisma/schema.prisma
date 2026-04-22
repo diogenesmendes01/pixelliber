@@ -83,6 +83,7 @@ model ReadingHistory {
   ebook       Ebook    @relation(fields: [ebookId], references: [id])
 
   @@unique([userId, ebookId])
+  @@index([userId, lastReadAt])
 }
 
 model PasswordResetToken {

@@ -37,30 +37,45 @@ export async function GET(request: NextRequest) {
       orderBy.contadorDownloads = "desc";
     }
 
-    const ebooks = await prisma.ebook.findMany({
-      where,
-      orderBy,
-    });
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50")));
+    const skip = (page - 1) * limit;
 
-    const categorias = await prisma.ebook.findMany({
-      select: { categoria: true },
-      distinct: ["categoria"],
-    });
-
-    const populares = await prisma.ebook.findMany({
-      orderBy: { contadorDownloads: "desc" },
-      take: 10,
-    });
-
-    const maisBaixados = await prisma.ebook.findMany({
-      orderBy: { contadorDownloads: "desc" },
-      take: 10,
-    });
+    const [ebooks, total, categorias, populares] = await Promise.all([
+      prisma.ebook.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          titulo: true,
+          autor: true,
+          categoria: true,
+          tags: true,
+          contadorDownloads: true,
+          createdAt: true,
+        },
+      }),
+      prisma.ebook.count({ where }),
+      prisma.ebook.findMany({
+        select: { categoria: true },
+        distinct: ["categoria"],
+      }),
+      prisma.ebook.findMany({
+        orderBy: { contadorDownloads: "desc" },
+        take: 10,
+        select: { id: true, titulo: true, autor: true, categoria: true, tags: true, contadorDownloads: true, createdAt: true },
+      }),
+    ]);
 
     return NextResponse.json({
       ebooks,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
       populares,
-      maisBaixados,
+      maisBaixados: populares,
       categorias: categorias.map((c) => c.categoria),
     });
   } catch (error) {

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Log the contact form submission (in production, send email or save to DB)
-  console.log("[Contact Form]", { name, email, subject, message, timestamp: new Date().toISOString() });
+  console.log("[Contact Form] Nova mensagem recebida", { subject: subject ?? "sem assunto", timestamp: new Date().toISOString() });
 
   return NextResponse.json({ ok: true, message: "Mensagem recebida! Retornaremos em breve." });
 }

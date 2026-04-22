@@ -28,9 +28,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 8) {
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
+    if (!passwordRegex.test(password)) {
       return NextResponse.json(
-        { error: "A senha deve ter pelo menos 8 caracteres" },
+        { error: "A senha deve ter pelo menos 8 caracteres, uma letra maiúscula e um número." },
         { status: 400 }
       );
     }

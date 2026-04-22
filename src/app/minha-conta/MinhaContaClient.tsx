@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Toast from "@/components/Toast";
+import { initials, formatCNPJ } from "@/lib/utils";
 
 interface User {
   id: string;
@@ -30,25 +32,6 @@ interface Props {
   isAdmin: boolean;
 }
 
-function initials(name: string | null) {
-  if (!name) return "?";
-  const p = name.trim().split(/\s+/);
-  return ((p[0]?.[0] ?? "") + (p[p.length - 1]?.[0] ?? "")).toUpperCase();
-}
-
-function formatCNPJ(cnpj: string | null) {
-  if (!cnpj) return "";
-  return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
-}
-
-function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
-  setTimeout(onDone, 3000);
-  return (
-    <div className="toast-slot">
-      <div className="toast">{msg}</div>
-    </div>
-  );
-}
 
 export default function MinhaContaClient({ user, isAdmin }: Props) {
   const [toast, setToast] = useState("");

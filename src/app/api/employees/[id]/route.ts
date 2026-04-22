@@ -9,12 +9,12 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: Context) {
   const session = await auth();
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
+  if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
-  const companyId = (session.user as any).companyId;
+  const companyId = session.user.companyId;
   const employee = await prisma.employee.findUnique({
     where: { id },
     include: { user: { select: { lastLoginAt: true, isActive: true } } },
@@ -29,16 +29,16 @@ export async function GET(req: NextRequest, { params }: Context) {
 
 export async function PUT(req: NextRequest, { params }: Context) {
   const session = await auth();
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
+  if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as any).userId;
+  const userId = session.user.userId;
   const csrfError = await validateCsrfRequest(req, userId);
   if (csrfError) return csrfError;
 
   const { id } = await params;
-  const companyId = (session.user as any).companyId;
+  const companyId = session.user.companyId;
   const body = await req.json();
   const { fullName, role, department, resetPassword } = body;
 
@@ -73,16 +73,16 @@ export async function PUT(req: NextRequest, { params }: Context) {
 
 export async function DELETE(req: NextRequest, { params }: Context) {
   const session = await auth();
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
+  if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as any).userId;
+  const userId = session.user.userId;
   const csrfError = await validateCsrfRequest(req, userId);
   if (csrfError) return csrfError;
 
   const { id } = await params;
-  const companyId = (session.user as any).companyId;
+  const companyId = session.user.companyId;
   const employee = await prisma.employee.findUnique({ where: { id } });
   if (!employee || employee.companyId !== companyId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Header from "@/components/Header";
+import { coverBg, parseTags } from "@/lib/utils";
 
 interface Ebook {
   id: string;
@@ -21,18 +22,6 @@ interface SessionUser {
   role: string;
 }
 
-function parseTags(tags: string | null): { hue: number; label: string } {
-  try {
-    const t = JSON.parse(tags ?? "{}");
-    return { hue: t.hue ?? 38, label: t.label ?? "geral" };
-  } catch {
-    return { hue: 38, label: "geral" };
-  }
-}
-
-function coverBg(hue: number) {
-  return `linear-gradient(150deg, oklch(0.42 0.1 ${hue}), oklch(0.22 0.08 ${(hue + 30) % 360}))`;
-}
 
 export default function EbookDetailClient({ ebook, user }: { ebook: Ebook; user: SessionUser }) {
   const router = useRouter();
