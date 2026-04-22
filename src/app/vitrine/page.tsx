@@ -1,184 +1,222 @@
 "use client";
 
-import Image from "next/image";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import WhatsAppButton from "@/components/WhatsAppButton";
-import { useRef } from "react";
+import Header from "@/components/Header";
 
-const populares = [
-  { id: "pai-rico-pai-pobre", title: "Pai rico, Pai pobre", cover: "/ebooks/pai-rico-pai-pobre.jpg" },
-  { id: "a-felicidade-comeca-com-voce", title: "A felicidade começa com você", cover: "/ebooks/livros-mais-vendidos-em-2022.jpg" },
-  { id: "autoridade-no-youtube", title: "Autoridade no Youtube", cover: "/ebooks/Autoridade-no-Youtube-1.jpg" },
-  { id: "sucesso-os-negocios-de-coaching", title: "Sucesso os negocios de coaching", cover: "/ebooks/sucesso-os-negocios-de-coaching-1.jpg" },
-  { id: "copywriting-destruindo-objecoes", title: "COPYWRINTING destruindo objeções", cover: "/ebooks/COPYWRINTING-destruindo-objeções-1.jpg" },
-  { id: "como-parar-de-se-preocupar", title: "Como parar de se preocupar", cover: "/ebooks/Como-parar-de-se-preocupar-com-que-as-pessoas-pensam-sobre-você-1.jpg" },
-  { id: "do-ponto-zero-a-conversao", title: "Do ponto zero a conversão", cover: "/ebooks/Do-ponto-zero-a-conversão-1.jpg" },
-  { id: "10-maneiras-de-atrair", title: "10 maneiras de atrair", cover: "/ebooks/10-maneiras-de-atrair-as-coisas-que-você-realmente-deseja-na-sua-vida-1.jpg" },
-  { id: "segredo-da-persuasao", title: "Segredo da persuasão", cover: "/ebooks/Segredo-da-persuasão-1.jpg" },
-  { id: "controlando-a-ansiedade", title: "Controlando a Ansiedade", cover: "/ebooks/Controlando-a-Ansiedade-1.jpg" },
+const BOOKS = [
+  { id: 1,  title: "Pai rico, pai pobre",                   author: "Robert Kiyosaki",  tag: "finanças",    cat: "Finanças",      hue: 38 },
+  { id: 2,  title: "A felicidade começa com você",          author: "M. Oliveira",      tag: "mente",       cat: "Mente",         hue: 340 },
+  { id: 3,  title: "Autoridade no YouTube",                 author: "C. Rocha",         tag: "marketing",   cat: "Marketing",     hue: 0 },
+  { id: 4,  title: "O negócio do coaching",                 author: "P. Alves",         tag: "negócios",    cat: "Negócios",      hue: 210 },
+  { id: 5,  title: "Copywriting: destruindo objeções",      author: "A. Costa",         tag: "vendas",      cat: "Vendas",        hue: 20 },
+  { id: 6,  title: "Como parar de se preocupar",            author: "D. Ramos",         tag: "mente",       cat: "Mente",         hue: 160 },
+  { id: 7,  title: "Do ponto zero à conversão",             author: "L. Souza",         tag: "marketing",   cat: "Marketing",     hue: 280 },
+  { id: 8,  title: "10 maneiras de atrair",                 author: "R. Dias",          tag: "mente",       cat: "Mente",         hue: 70 },
+  { id: 9,  title: "Segredo da persuasão",                  author: "J. Leal",          tag: "vendas",      cat: "Vendas",        hue: 12 },
+  { id: 10, title: "Controlando a ansiedade",               author: "F. Melo",          tag: "mente",       cat: "Mente",         hue: 185 },
+  { id: 11, title: "Organizze: saia do vermelho",           author: "P. Moura",         tag: "finanças",    cat: "Finanças",      hue: 120 },
+  { id: 12, title: "Desenvolva seu QI financeiro",          author: "T. Vaz",           tag: "finanças",    cat: "Finanças",      hue: 50 },
+  { id: 13, title: "Encontrando dinheiro",                  author: "M. Nunes",         tag: "finanças",    cat: "Finanças",      hue: 100 },
+  { id: 14, title: "Liberte o gigante financeiro",          author: "A. Lopes",         tag: "finanças",    cat: "Finanças",      hue: 260 },
+  { id: 15, title: "TikTok Marketing",                      author: "V. Silva",         tag: "marketing",   cat: "Marketing",     hue: 330 },
+  { id: 16, title: "Orçamento familiar",                    author: "B. Reis",          tag: "finanças",    cat: "Finanças",      hue: 195 },
 ];
 
-const baixados = [
-  { id: "organizze-saia-do-vermelho", title: "ORGANIZZE Saia do vermelho", cover: "/ebooks/ORGANIZZE-Saia-do-vermelho.jpg" },
-  { id: "desenvolva-seu-qi-financeiro", title: "Desenvolva seu QI financeiro", cover: "/ebooks/Desenvolva-seu-QI-financeiro.jpg" },
-  { id: "encontrando-dinheiro", title: "Encontrando Dinheiro", cover: "/ebooks/Encontrando-Dinheiro.jpg" },
-  { id: "extracao-de-dinheiro", title: "Extração de dinheiro", cover: "/ebooks/Extração-de-dinheiro.png" },
-  { id: "liberte-o-gigante-financeiro-interior", title: "Liberte o gigante financeiro interior", cover: "/ebooks/Liberte-o-gigante-financeiro-interior.png" },
-  { id: "o-poder-do-dinheiro-extra", title: "O poder do dinheiro extra", cover: "/ebooks/Dinheiro-o-poder-do-dinheiro-extra.jpg" },
-  { id: "tiktok-marketing", title: "Tiktok Marketing", cover: "/ebooks/Tiktok-Marketing-como-o-usar-o-poder-do-1.jpg" },
-  { id: "orcamento-familiar", title: "Orçamento Familiar", cover: "/ebooks/Orçamento-Familiar.png" },
-  { id: "101-maneiras-de-investir-na-bolsa", title: "101 Maneiras de investir na bolsa", cover: "/ebooks/101-Maneiras-de-investir-na-bolsa.png" },
+const NEW_IDS = [15, 16, 13, 9];
+const TOP_IDS = [1, 5, 12, 7, 3];
+const CONTINUE_BOOKS = [
+  { bookId: 1, cap: "Cap. 3", pag: 42, pct: 15.6, when: "hoje" },
+  { bookId: 4, cap: "Cap. 1", pag: 18, pct: 8, when: "ontem" },
+  { bookId: 7, cap: "Cap. 5", pag: 114, pct: 62, when: "há 3 dias" },
 ];
 
-function EbookCarousel({ books }: { books: { id: string; title: string; cover: string }[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+const CATS = ["Todos", "Finanças", "Marketing", "Mente", "Negócios", "Vendas", "Carreira", "Produtividade"];
 
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const amount = direction === "left" ? -300 : 300;
-      scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
-    }
-  };
+function coverBg(b: (typeof BOOKS)[0]) {
+  return `linear-gradient(150deg, oklch(0.42 0.1 ${b.hue}), oklch(0.22 0.08 ${(b.hue + 30) % 360}))`;
+}
 
+function BookCover({ book, small }: { book: (typeof BOOKS)[0]; small?: boolean }) {
+  const isNew = NEW_IDS.includes(book.id);
   return (
-    <div className="relative group">
-      {/* Left arrow */}
-      <button
-        onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 text-white w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="Anterior"
-      >
-        ‹
-      </button>
-
-      <div ref={scrollRef} className="carousel-scroll">
-        {books.map((book, i) => (
-          <Link
-            key={i}
-            href={`/vitrine/${book.id}`}
-            className="ebook-card"
-            style={{
-              width: "calc((100% - 60px) / 6)",
-              minWidth: "160px",
-            }}
-          >
-            <div className="relative aspect-[3/4]">
-              <Image
-                src={book.cover}
-                alt={book.title}
-                fill
-                className="object-cover"
-                sizes="200px"
-              />
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Right arrow */}
-      <button
-        onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 text-white w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="Próximo"
-      >
-        ›
-      </button>
-    </div>
+    <Link
+      href={`/vitrine/${book.id}`}
+      className="cover"
+      style={{ background: coverBg(book), ...(small ? { width: 90, flexShrink: 0 } : {}) }}
+      aria-label={`${book.title} — ${book.author}`}
+    >
+      {isNew && <span className="cover-new">novo</span>}
+      <span className="cover-tag">{book.tag}</span>
+      <span>
+        <span className="cover-title">{book.title}</span>
+        <span className="cover-author" style={{ display: "block" }}>{book.author}</span>
+      </span>
+    </Link>
   );
 }
 
 export default function VitrinePage() {
+  const [activeCat, setActiveCat] = useState("Todos");
+  const [query, setQuery] = useState("");
+  const [showSkel, setShowSkel] = useState(false);
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return BOOKS.filter((b) => {
+      const matchCat = activeCat === "Todos" || b.cat === activeCat;
+      const matchQ = !q || (b.title + " " + b.author).toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
+  }, [activeCat, query]);
+
+  const newBooks = BOOKS.filter((b) => NEW_IDS.includes(b.id));
+  const topBooks = BOOKS.filter((b) => TOP_IDS.includes(b.id));
+
   return (
     <>
-      {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-50 w-full">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/">
-            <Image
-              src="/logo/horizontal/horizontal-200x40.png"
-              alt="Pixel Liber"
-              width={180}
-              height={40}
-              priority
-              className="h-10 w-auto"
-            />
-          </Link>
-          <Link href="/minha-conta">
-            <Image
-              src="/Avatar-perfil.png"
-              alt="Minha conta"
-              width={35}
-              height={35}
-              className="rounded-full"
-              style={{ width: "35px", height: "35px", objectFit: "cover" }}
-            />
-          </Link>
-        </div>
-      </header>
+      <Header active="catalogo" role="admin" userName="Marina Castro" userCompany="Horizonte Livros" userEmail="marina@horizontelivros.com.br" />
 
-      <main className="min-h-screen bg-[#121212]">
-        {/* Video Banner */}
-        <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover"
-          >
-            <source src="/videos/Books-Animation.mp4" type="video/mp4" />
-          </video>
-          {/* Gradient overlay */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 40%, transparent 100%)",
-            }}
-          />
-          <div className="absolute inset-0 flex items-center">
-            <div className="px-8 md:px-16 max-w-2xl">
-              <h1
-                className="font-bold text-white leading-tight"
-                style={{ fontSize: "clamp(32px, 5vw, 48px)" }}
+      <main className="container" style={{ paddingTop: 18, paddingBottom: 60 }}>
+        {/* Page header */}
+        <section className="section" style={{ paddingBottom: 0 }}>
+          <span className="tag gold-text">Catálogo</span>
+          <h1 className="serif" style={{ fontSize: "var(--h2)", margin: "8px 0 6px" }}>
+            480+ e-books, um só acesso.
+          </h1>
+          <p style={{ color: "var(--muted)", maxWidth: "52ch" }}>
+            Filtre por categoria ou busque pelo título/autor.
+          </p>
+
+          <div style={{ marginTop: 18 }}>
+            <input
+              className="input"
+              placeholder="buscar livros, autores, tópicos…"
+              style={{ maxWidth: 480 }}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="chips">
+            {CATS.map((cat) => (
+              <button
+                key={cat}
+                className={`chip${activeCat === cat ? " chip--gold" : ""}`}
+                onClick={() => setActiveCat(cat)}
               >
-                Você tem acesso a todos os e-books, sem limite!
-              </h1>
-              <a
-                href="#populares"
-                className="mt-6 inline-flex items-center gap-3 rounded-md px-8 py-3 font-semibold transition hover:opacity-90"
-                style={{
-                  backgroundColor: "white",
-                  color: "black",
-                  fontSize: "16px",
-                }}
-              >
-                <Image
-                  src="/icons/abra-o-livro.svg"
-                  alt=""
-                  width={24}
-                  height={24}
-                  style={{ width: "24px", height: "24px" }}
-                />
-                Aproveite a sua leitura
-              </a>
-            </div>
+                {cat}
+              </button>
+            ))}
           </div>
         </section>
 
-        {/* Os mais populares */}
-        <section id="populares" className="px-6 md:px-12 py-12">
-          <h2 className="text-2xl font-bold mb-4 text-white">Os mais populares</h2>
-          <EbookCarousel books={populares} />
-        </section>
+        {/* Continuar lendo */}
+        {!query && activeCat === "Todos" && (
+          <section className="section" style={{ paddingTop: 0 }}>
+            <div className="section-head">
+              <h2 className="serif" style={{ fontSize: "var(--h3)" }}>Continuar lendo</h2>
+            </div>
+            <div className="continue-grid">
+              {CONTINUE_BOOKS.map((c) => {
+                const book = BOOKS.find((b) => b.id === c.bookId)!;
+                return (
+                  <div key={c.bookId} className="continue-card">
+                    <BookCover book={book} small />
+                    <div className="meta">
+                      <div>
+                        <div className="serif" style={{ fontSize: 14, fontWeight: 500, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {book.title}
+                        </div>
+                        <div className="tag">{c.cap} · pág. {c.pag}</div>
+                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>lido {c.when}</div>
+                      </div>
+                      <div>
+                        <div style={{ height: 2, background: "rgba(247,245,240,0.1)", borderRadius: 2, marginBottom: 8 }}>
+                          <div style={{ width: `${c.pct}%`, height: "100%", background: "var(--gold)", borderRadius: 2 }} />
+                        </div>
+                        <Link href={`/vitrine/${book.id}`} className="btn btn--gold btn--sm btn--block">
+                          Retomar →
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-        {/* Os mais baixados */}
-        <section className="px-6 md:px-12 py-12">
-          <h2 className="text-2xl font-bold mb-4 text-white">Os mais baixados</h2>
-          <EbookCarousel books={baixados} />
+        {/* Recém-adicionados */}
+        {!query && activeCat === "Todos" && (
+          <section className="section" style={{ paddingTop: 0 }}>
+            <div className="section-head">
+              <h2 className="serif" style={{ fontSize: "var(--h3)" }}>Recém-adicionados</h2>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>atualizado esta semana</span>
+            </div>
+            <div className="grid-books">
+              {newBooks.map((b) => <BookCover key={b.id} book={b} />)}
+            </div>
+          </section>
+        )}
+
+        {/* Mais lidos */}
+        {!query && activeCat === "Todos" && (
+          <section className="section" style={{ paddingTop: 0 }}>
+            <div className="section-head">
+              <h2 className="serif" style={{ fontSize: "var(--h3)" }}>Mais lidos na sua empresa</h2>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>últimos 30 dias</span>
+            </div>
+            <div className="grid-books">
+              {topBooks.map((b) => <BookCover key={b.id} book={b} />)}
+            </div>
+          </section>
+        )}
+
+        {/* Todos / Filtered */}
+        <section className="section" style={{ paddingTop: 0 }}>
+          <div className="section-head">
+            <h2 className="serif" style={{ fontSize: "var(--h3)" }}>
+              {activeCat === "Todos" ? "Todos os títulos" : activeCat}
+            </h2>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>
+              {filtered.length} {filtered.length === 1 ? "título" : "títulos"}
+            </span>
+          </div>
+
+          {filtered.length > 0 ? (
+            <div className="grid-books">
+              {filtered.map((b) => <BookCover key={b.id} book={b} />)}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="e-icon">🔍</div>
+              <h4>{query ? `Nada encontrado para "${query}"` : `Nenhum título em ${activeCat}`}</h4>
+              <p>
+                {query
+                  ? "Tente outra palavra ou remova filtros de categoria."
+                  : "Esta categoria ainda está sendo curada. Enquanto isso, explore as outras."}
+              </p>
+              <button
+                className="btn btn--gold btn--sm"
+                onClick={() => { setQuery(""); setActiveCat("Todos"); }}
+              >
+                Ver todos os títulos
+              </button>
+            </div>
+          )}
         </section>
       </main>
-      <WhatsAppButton />
+
+      <footer className="ft">
+        <div className="container ft-inner">
+          <div>© Pixel Liber · EST. 2024</div>
+          <div style={{ display: "flex", gap: 14 }}>
+            <a href="#">Termos</a>
+            <a href="#">Privacidade</a>
+          </div>
+        </div>
+      </footer>
     </>
   );
 }

@@ -1,26 +1,57 @@
 export default function ReadAnywhere() {
   return (
-    <section className="bg-[#121212] px-6 py-20">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 md:flex-row">
-        <div className="flex-1 text-center md:text-left">
-          <h2 className="text-3xl font-bold md:text-4xl">Leia onde quiser</h2>
-          <p className="mt-4 text-lg text-gray-300">
-            Você pode ler em qualquer dispositivo que tenha acesso a um
-            navegador.
+    <section className="section">
+      <div className="container">
+        <div style={{ textAlign: "center", marginBottom: "clamp(32px, 5vw, 48px)" }}>
+          <span className="tag gold-text">Multiplataforma</span>
+          <h2
+            className="serif"
+            style={{ fontSize: "var(--h2)", margin: "10px 0 12px", fontWeight: 500 }}
+          >
+            Leia onde e quando quiser
+          </h2>
+          <p style={{ color: "rgba(247,245,240,0.6)", maxWidth: "44ch", margin: "0 auto", fontSize: "var(--fs-lg)" }}>
+            O acesso é pelo navegador — sem apps, sem downloads obrigatórios.
           </p>
         </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-md overflow-hidden rounded-lg">
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-auto"
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "clamp(16px, 3vw, 32px)",
+            textAlign: "center",
+          }}
+        >
+          {[
+            { icon: "💻", title: "No navegador", desc: "Acesse de qualquer computador sem instalar nada." },
+            { icon: "📱", title: "No celular", desc: "Leia no smartphone ou tablet onde estiver." },
+            { icon: "⭳", title: "Modo offline", desc: "Baixe e leia sem internet pelos planos Standard e Pro." },
+            { icon: "🔖", title: "Com marcadores", desc: "Salve trechos favoritos e retome de onde parou." },
+          ].map((item, i) => (
+            <div
+              key={i}
+              style={{
+                background: "rgba(247,245,240,0.03)",
+                border: "1px solid var(--line)",
+                borderRadius: 12,
+                padding: "clamp(20px, 3vw, 28px)",
+              }}
             >
-              <source src="/videos/ebook.mp4" type="video/mp4" />
-            </video>
-          </div>
+              <div
+                style={{
+                  width: 56, height: 56, borderRadius: "50%",
+                  background: "rgba(247,245,240,0.06)", border: "1px solid var(--line)",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22, marginBottom: 14,
+                }}
+              >
+                {item.icon}
+              </div>
+              <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 14 }}>{item.title}</div>
+              <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>{item.desc}</div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
