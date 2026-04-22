@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { coverBg, parseTags } from "@/lib/utils";
@@ -140,20 +140,31 @@ function ContinueCardSkeleton() {
 
 export default function VitrineClient({ user }: { user: SessionUser }) {
   const [books, setBooks] = useState<Book[]>([]);
+  const [topBooks, setTopBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCat, setActiveCat] = useState("Todos");
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [history, setHistory] = useState<ReadingHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 350);
+    return () => clearTimeout(t);
+  }, [query]);
 
   useEffect(() => {
     async function fetchBooks() {
       setLoading(true);
       try {
-        const res = await fetch("/api/ebooks");
+        const params = new URLSearchParams();
+        if (activeCat !== "Todos") params.set("categoria", activeCat);
+        if (debouncedQuery.trim()) params.set("search", debouncedQuery.trim());
+        const res = await fetch(`/api/ebooks?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
           setBooks((data.ebooks as EbookRaw[]).map(parseBook));
+          setTopBooks((data.populares as EbookRaw[]).map(parseBook));
         }
       } catch {
         // silently fail — show empty state
@@ -162,7 +173,7 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
       }
     }
     fetchBooks();
-  }, []);
+  }, [activeCat, debouncedQuery]);
 
   useEffect(() => {
     async function fetchHistory() {
@@ -182,18 +193,7 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
     fetchHistory();
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    return books.filter((b) => {
-      const matchCat = activeCat === "Todos" || b.cat === activeCat;
-      const matchQ = !q || (b.title + " " + b.author).toLowerCase().includes(q);
-      return matchCat && matchQ;
-    });
-  }, [books, activeCat, query]);
-
-  // Top 5 by downloads (API already returns sorted by contadorDownloads desc)
-  const topBooks = books.slice(0, 5);
-  // Newest 4 (last in list tend to have lower downloads = newer)
+  // Newest 4: last items in the returned list (lower downloads = tend to be newer)
   const newBooks = books.slice(-4).reverse();
 
   return (
@@ -291,7 +291,7 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
               {activeCat === "Todos" ? "Todos os títulos" : activeCat}
             </h2>
             <span style={{ fontSize: 12, color: "var(--muted)" }}>
-              {loading ? "carregando…" : `${filtered.length} ${filtered.length === 1 ? "título" : "títulos"}`}
+              {loading ? "carregando…" : `${books.length} ${books.length === 1 ? "título" : "títulos"}`}
             </span>
           </div>
 
@@ -299,9 +299,9 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
             <div className="grid-books">
               {Array.from({ length: 8 }).map((_, i) => <BookSkeleton key={i} />)}
             </div>
-          ) : filtered.length > 0 ? (
+          ) : books.length > 0 ? (
             <div className="grid-books">
-              {filtered.map((b) => <BookCover key={b.id} book={b} />)}
+              {books.map((b) => <BookCover key={b.id} book={b} />)}
             </div>
           ) : (
             <div className="empty-state">

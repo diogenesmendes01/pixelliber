@@ -20,10 +20,26 @@ export async function PUT(request: NextRequest) {
   }
 
   if (body.notifSettings !== undefined) {
-    data.notifSettings =
-      typeof body.notifSettings === "string"
-        ? body.notifSettings
-        : JSON.stringify(body.notifSettings);
+    const ns = typeof body.notifSettings === "string"
+      ? (() => { try { return JSON.parse(body.notifSettings); } catch { return null; } })()
+      : body.notifSettings;
+
+    if (!ns || typeof ns !== "object") {
+      return NextResponse.json({ error: "notifSettings inválido." }, { status: 400 });
+    }
+
+    // Only allow known boolean keys
+    const allowedKeys = ["novosLivros", "equipe", "plano", "dicas"] as const;
+    const validated: Record<string, boolean> = {};
+    for (const key of allowedKeys) {
+      if (key in ns) {
+        if (typeof ns[key] !== "boolean") {
+          return NextResponse.json({ error: `notifSettings.${key} deve ser boolean.` }, { status: 400 });
+        }
+        validated[key] = ns[key];
+      }
+    }
+    data.notifSettings = JSON.stringify(validated);
   }
 
   if (Object.keys(data).length === 0) {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { initials } from "@/lib/utils";
+import { useLogout } from "@/hooks/useLogout";
 
 interface HeaderProps {
   active?: string;
@@ -27,10 +28,7 @@ export default function Header({
   const isAdmin = role === "admin";
   const isUser = !isGuest;
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/login";
-  }
+  const handleLogout = useLogout();
 
   return (
     <header className="hdr" style={{ position: "relative" }}>
