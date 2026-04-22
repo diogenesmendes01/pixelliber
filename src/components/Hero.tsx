@@ -1,35 +1,10 @@
 import Link from "next/link";
-
-const HERO_BOOKS = [
-  { hue: 38, tag: "finanças", title: "Pai rico, pai pobre", author: "R. Kiyosaki" },
-  { hue: 340, tag: "mente", title: "A felicidade começa com você", author: "M. Oliveira" },
-  { hue: 0, tag: "marketing", title: "Autoridade no YouTube", author: "C. Rocha" },
-  { hue: 210, tag: "negócios", title: "O negócio do coaching", author: "P. Alves" },
-  { hue: 20, tag: "vendas", title: "Copywriting: destruindo objeções", author: "A. Costa" },
-  { hue: 160, tag: "mente", title: "Como parar de se preocupar", author: "D. Ramos" },
-  { hue: 280, tag: "marketing", title: "Do ponto zero à conversão", author: "L. Souza" },
-  { hue: 70, tag: "mente", title: "10 maneiras de atrair", author: "R. Dias" },
-  { hue: 12, tag: "vendas", title: "Segredo da persuasão", author: "J. Leal" },
-];
-
-function BookCover({ book }: { book: typeof HERO_BOOKS[0] }) {
-  const bg = `linear-gradient(150deg, oklch(0.42 0.1 ${book.hue}), oklch(0.22 0.08 ${(book.hue + 30) % 360}))`;
-  return (
-    <div
-      className="cover"
-      style={{ background: bg }}
-      aria-label={`${book.title} — ${book.author}`}
-    >
-      <span className="cover-tag">{book.tag}</span>
-      <span>
-        <span className="cover-title">{book.title}</span>
-        <span className="cover-author" style={{ display: "block" }}>{book.author}</span>
-      </span>
-    </div>
-  );
-}
+import BookCover from "./BookCover";
+import { BOOKS } from "@/lib/books-data";
 
 export default function Hero() {
+  const heroBooks = BOOKS.slice(0, 9);
+
   return (
     <section className="hero">
       <div className="container">
@@ -67,8 +42,8 @@ export default function Hero() {
             </div>
           </div>
           <div className="hero-stack">
-            {HERO_BOOKS.map((book, i) => (
-              <BookCover key={i} book={book} />
+            {heroBooks.map((book) => (
+              <BookCover key={book.id} book={book} href="/login" />
             ))}
           </div>
         </div>

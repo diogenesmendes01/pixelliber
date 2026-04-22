@@ -4,11 +4,13 @@ import { verifyToken } from "@/lib/auth";
 const PUBLIC_PATHS = [
   "/",
   "/login",
-  "/cadastro-assinante",
-  "/contato",
   "/esqueceu-senha",
   "/acesso-bloqueado",
   "/reset-password",
+];
+
+const PUBLIC_PREFIXES = [
+  "/convite/",
 ];
 
 export async function proxy(request: NextRequest) {
@@ -17,7 +19,9 @@ export async function proxy(request: NextRequest) {
   // Allow public paths and all auth API routes
   if (
     PUBLIC_PATHS.some((p) => pathname === p) ||
-    pathname.startsWith("/api/auth/")
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p)) ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/contact")
   ) {
     return NextResponse.next();
   }

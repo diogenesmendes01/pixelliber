@@ -1,22 +1,23 @@
 import { redirect } from "next/navigation";
 import MinhaContaClient from "./MinhaContaClient";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { findUserWithCompany, subscriptionActive } from "@/lib/user-company";
 
-async function getUserData(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { company: true },
-  });
-  if (!user) return null;
-  return {
+export default async function MinhaContaPage() {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  const user = await findUserWithCompany(session.user.userId);
+  if (!user) redirect("/login");
+
+  const data = {
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
-    twoFaEnabled: user.twoFaEnabled,
-    notifSettings: user.notifSettings,
-    assinaturaAtiva: user.company?.statusAssinatura === "ativa",
+    twoFaEnabled: user.twoFaEnabled ?? false,
+    notifSettings: user.notifSettings ?? null,
+    assinaturaAtiva: subscriptionActive(user.company),
     company: user.company
       ? {
           name: user.company.name,
@@ -25,21 +26,6 @@ async function getUserData(userId: string) {
         }
       : null,
   };
-}
 
-export default async function MinhaContaPage() {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/login");
-  }
-
-  const userId = session.user.userId;
-  const user = await getUserData(userId);
-  if (!user) {
-    redirect("/login");
-  }
-
-  const isAdmin = user.role === "ADMIN";
-
-  return <MinhaContaClient user={user} isAdmin={isAdmin} />;
+  return <MinhaContaClient user={data} isAdmin={user.role === "ADMIN"} />;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Logo from "@/components/Logo";
 
 const COVER_BOOKS = [
   { hue: 38 }, { hue: 160 }, { hue: 280 },
@@ -11,10 +12,7 @@ const COVER_BOOKS = [
 function StackDeco() {
   return (
     <div className="auth-brand" style={{ position: "relative" }}>
-      <div className="logo" style={{ color: "var(--paper)" }}>
-        <span className="logo-dot" />
-        <span>Pixel Liber</span>
-      </div>
+      <Logo variant="on-colored" size="sm" />
       <div className="stack-deco">
         {COVER_BOOKS.map((b, i) => (
           <div

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // In production: check if email exists in database and send real email
     // For now, we always return success to prevent email enumeration
-    const { token, expiresAt } = await createResetToken(email);
+    const { token } = await createResetToken(email);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     const resetLink = `${baseUrl}/reset-password?token=${token}`;

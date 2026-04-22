@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { auth, signToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
 import { validateCsrfRequest } from "@/lib/csrf";
+import { sendInviteEmail } from "@/lib/email";
 
 export async function GET() {
   const session = await auth();
@@ -63,13 +64,14 @@ export async function POST(req: NextRequest) {
   const password = initialPassword || crypto.randomUUID().replace(/-/g, "").slice(0, 8);
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  // User.companyId é @unique (exclusivo do admin).
+  // Funcionário vincula à empresa só via Employee.companyId/userId.
   const user = await prisma.user.create({
     data: {
       name: fullName,
       email: corporateEmail,
       passwordHash: hashedPassword,
       role: "USER",
-      companyId,
     },
   });
 
@@ -85,5 +87,34 @@ export async function POST(req: NextRequest) {
     include: { user: { select: { lastLoginAt: true, isActive: true } } },
   });
 
-  return NextResponse.json({ employee, tempPassword: password }, { status: 201 });
+  // Build invite link
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  const inviteToken = await signToken(
+    { userId: user.id, companyId, cnpj: company?.cnpj ?? "", name: fullName, role: "USER" },
+    false
+  );
+  const appUrl = process.env.APP_URL ?? `http://localhost:${process.env.PORT ?? "3000"}`;
+  const inviteLink = `${appUrl}/convite/${inviteToken}?email=${encodeURIComponent(corporateEmail)}&name=${encodeURIComponent(fullName)}&company=${encodeURIComponent(company?.name ?? "sua empresa")}&role=${encodeURIComponent(role || "Leitor")}`;
+
+  // Fire the invite email (best effort — doesn't block response)
+  try {
+    await sendInviteEmail({
+      to: corporateEmail,
+      invitedName: fullName,
+      companyName: company?.name ?? "sua empresa",
+      role: role || "Leitor",
+      inviteLink,
+    });
+  } catch (err) {
+    console.error("Failed to send invite email:", err);
+  }
+
+  return NextResponse.json(
+    {
+      employee,
+      tempPassword: password,
+      inviteLink: process.env.NODE_ENV !== "production" ? inviteLink : undefined,
+    },
+    { status: 201 }
+  );
 }

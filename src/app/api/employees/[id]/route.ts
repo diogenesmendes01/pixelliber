@@ -47,7 +47,11 @@ export async function PUT(req: NextRequest, { params }: Context) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const updateData: any = {};
+  const updateData: {
+    fullName?: string;
+    role?: string | null;
+    department?: string | null;
+  } = {};
   if (fullName !== undefined) updateData.fullName = fullName;
   if (role !== undefined) updateData.role = role;
   if (department !== undefined) updateData.department = department;

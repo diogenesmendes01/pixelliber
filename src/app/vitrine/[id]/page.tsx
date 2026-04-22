@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { findUserWithCompany, subscriptionActive } from "@/lib/user-company";
 import EbookDetailClient from "./EbookDetailClient";
 
 export default async function EbookDetailPage({
@@ -14,29 +15,12 @@ export default async function EbookDetailPage({
   const { id } = await params;
 
   const [dbUser, ebook] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        twoFaEnabled: true,
-        notifSettings: true,
-        company: {
-          select: {
-            name: true,
-            cnpj: true,
-            statusAssinatura: true,
-          },
-        },
-      },
-    }),
+    findUserWithCompany(session.user.userId),
     prisma.ebook.findUnique({ where: { id } }),
   ]);
 
   if (!dbUser) redirect("/login");
-  if (dbUser.company?.statusAssinatura !== "ativa") redirect("/acesso-bloqueado");
+  if (!subscriptionActive(dbUser.company)) redirect("/acesso-bloqueado");
   if (!ebook) notFound();
 
   return (

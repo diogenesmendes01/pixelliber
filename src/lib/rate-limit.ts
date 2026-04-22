@@ -58,19 +58,52 @@ const EMAIL_MAX_ATTEMPTS = 3;
 export function isRateLimited(email: string): boolean {
   const now = Date.now();
   const key = `email:${email}`;
-  
+
   const entry = rateLimitStore.get(key);
-  
+
   if (!entry || now > entry.resetAt) {
     rateLimitStore.set(key, { count: 1, resetAt: now + EMAIL_WINDOW_MS });
     return false;
   }
-  
+
   if (entry.count >= EMAIL_MAX_ATTEMPTS) {
     return true;
   }
-  
+
   entry.count++;
   rateLimitStore.set(key, entry);
   return false;
+}
+
+// ============ INVITE RATE LIMIT ============
+const INVITE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const INVITE_MAX_ATTEMPTS = 10;
+
+/**
+ * Rate limit por IP para /api/auth/accept-invite.
+ * Protege contra brute-force de tokens JWT.
+ */
+export function checkInviteRateLimit(request: NextRequest): { allowed: boolean; resetAt: number } {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || request.headers.get("x-real-ip")
+    || "unknown";
+
+  const now = Date.now();
+  const key = `invite:${ip}`;
+  const entry = rateLimitStore.get(key);
+
+  if (!entry || now > entry.resetAt) {
+    const resetAt = now + INVITE_WINDOW_MS;
+    rateLimitStore.set(key, { count: 1, resetAt });
+    return { allowed: true, resetAt };
+  }
+
+  entry.count++;
+  rateLimitStore.set(key, entry);
+
+  if (entry.count > INVITE_MAX_ATTEMPTS) {
+    return { allowed: false, resetAt: entry.resetAt };
+  }
+
+  return { allowed: true, resetAt: entry.resetAt };
 }
