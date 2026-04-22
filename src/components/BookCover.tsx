@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export interface BookData {
   id: number | string;
@@ -32,12 +33,13 @@ export default function BookCover({ book, extraClass = "", href, style }: Props)
       aria-label={`${book.t} — ${book.a}`}
     >
       {book.img && (
-        <img
+        <Image
           className="cover-img"
           src={book.img}
           alt=""
           aria-hidden="true"
-          loading="lazy"
+          fill
+          sizes="(max-width: 720px) 40vw, 160px"
         />
       )}
       {book.isNew && <span className="cover-new">novo</span>}

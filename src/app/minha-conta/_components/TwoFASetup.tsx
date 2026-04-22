@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import QRCode from "qrcode";
 
 interface Props {
   email: string;
@@ -46,9 +45,15 @@ export default function TwoFASetup({ email, onClose, onComplete }: Props) {
   const otpauthUri = `otpauth://totp/Pixel%20Liber:${encodeURIComponent(email)}?secret=${secret}&issuer=Pixel%20Liber&algorithm=SHA1&digits=6&period=30`;
 
   useEffect(() => {
-    QRCode.toDataURL(otpauthUri, { width: 220, margin: 1, color: { dark: "#0f0f10", light: "#ffffff" } })
-      .then(setQrDataUrl)
-      .catch(console.error);
+    // Dynamic import — carrega ~30KB só quando o modal de 2FA abre
+    let cancelled = false;
+    import("qrcode").then(({ default: QRCode }) => {
+      if (cancelled) return;
+      QRCode.toDataURL(otpauthUri, { width: 220, margin: 1, color: { dark: "#0f0f10", light: "#ffffff" } })
+        .then((url) => { if (!cancelled) setQrDataUrl(url); })
+        .catch(console.error);
+    }).catch(console.error);
+    return () => { cancelled = true; };
   }, [otpauthUri]);
 
   function handleVerify(e: React.FormEvent) {

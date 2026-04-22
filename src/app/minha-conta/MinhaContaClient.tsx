@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import Toast from "@/components/Toast";
 import { initials, formatCNPJ } from "@/lib/utils";
@@ -42,15 +42,12 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
   const [toast, setToast] = useState("");
   const [twoFA, setTwoFA] = useState(user.twoFaEnabled);
   const [notif, setNotif] = useState(parseNotif(user.notifSettings));
-  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(`pl-avatar-${user.id}`);
+  });
   const [twoFaSetupOpen, setTwoFaSetupOpen] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = localStorage.getItem(`pl-avatar-${user.id}`);
-    if (saved) setAvatarDataUrl(saved);
-  }, [user.id]);
 
   function onAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -134,7 +131,7 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
               }}
             >
               {avatarDataUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                /* eslint-disable-next-line @next/next/no-img-element -- data URL do localStorage, não vai pelo CDN */
                 <img
                   src={avatarDataUrl}
                   alt=""

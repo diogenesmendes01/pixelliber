@@ -21,7 +21,8 @@ function formatCountdown(ms: number): string {
 }
 
 export default function BlockedAccount({ cnpj, releaseAt, onRecover, onBack }: Props) {
-  const [remaining, setRemaining] = useState(releaseAt - Date.now());
+  // Lazy initializer — Date.now() roda só no primeiro render
+  const [remaining, setRemaining] = useState(() => releaseAt - Date.now());
 
   useEffect(() => {
     const t = setInterval(() => {

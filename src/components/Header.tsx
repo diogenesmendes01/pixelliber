@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "./Logo";
 import { initials } from "@/lib/utils";
 import { useLogout } from "@/hooks/useLogout";
@@ -87,18 +88,20 @@ export default function Header({
   userCompany = "",
   userEmail = "",
 }: HeaderProps) {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(DEFAULT_NOTIFICATIONS);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_NOTIFICATIONS;
     const saved = localStorage.getItem("pl-notifications");
-    if (saved) {
-      try { setNotifications(JSON.parse(saved)); } catch { /* noop */ }
+    if (!saved) return DEFAULT_NOTIFICATIONS;
+    try {
+      return JSON.parse(saved) as Notification[];
+    } catch {
+      return DEFAULT_NOTIFICATIONS;
     }
-  }, []);
+  });
 
   function persistNotifs(next: Notification[]) {
     setNotifications(next);
@@ -113,7 +116,7 @@ export default function Header({
     persistNotifs(notifications.map((x) => (x.id === n.id ? { ...x, lida: true } : x)));
     setNotifOpen(false);
     if (n.link) {
-      window.location.href = n.link;
+      router.push(n.link);
     }
   }
 

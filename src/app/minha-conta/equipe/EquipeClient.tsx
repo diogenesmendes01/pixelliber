@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Toast from "@/components/Toast";
 import Logo from "@/components/Logo";
@@ -202,22 +202,25 @@ export default function EquipeClient({ companyName, userName }: Props) {
   }
 
   // Counts
-  const counts = {
-    todos: employees.length,
-    ativos: employees.filter((e) => statusOf(e) === "ativos").length,
-    pendentes: employees.filter((e) => statusOf(e) === "pendentes").length,
-    inativos: employees.filter((e) => statusOf(e) === "inativos").length,
-  };
+  const counts = useMemo(
+    () => ({
+      todos: employees.length,
+      ativos: employees.filter((e) => statusOf(e) === "ativos").length,
+      pendentes: employees.filter((e) => statusOf(e) === "pendentes").length,
+      inativos: employees.filter((e) => statusOf(e) === "inativos").length,
+    }),
+    [employees],
+  );
 
   // Filter + search
-  const filtered = employees.filter((e) => {
-    if (filter !== "todos" && statusOf(e) !== filter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      if (!e.fullName.toLowerCase().includes(q) && !e.corporateEmail.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return employees.filter((e) => {
+      if (filter !== "todos" && statusOf(e) !== filter) return false;
+      if (q && !e.fullName.toLowerCase().includes(q) && !e.corporateEmail.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [employees, filter, search]);
 
   const LIMIT_LICENCAS = 10;
   const usedLicenses = counts.ativos + counts.pendentes;
@@ -225,7 +228,7 @@ export default function EquipeClient({ companyName, userName }: Props) {
   const availableLicenses = Math.max(0, LIMIT_LICENCAS - usedLicenses);
 
   // #8 Activity timeline derived from employees
-  const activityEntries: ActivityEntry[] = (() => {
+  const activityEntries: ActivityEntry[] = useMemo(() => {
     const entries: ActivityEntry[] = [];
     const adminName = userName ?? "Admin";
     employees.forEach((emp) => {
@@ -269,7 +272,7 @@ export default function EquipeClient({ companyName, userName }: Props) {
       }
     });
     return entries.sort((a, b) => b.when.getTime() - a.when.getTime()).slice(0, 8);
-  })();
+  }, [employees, userName]);
 
   return (
     <div className="console" style={{ background: "var(--paper)", color: "var(--ink)" }}>

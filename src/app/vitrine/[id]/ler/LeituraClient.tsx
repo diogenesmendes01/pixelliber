@@ -64,14 +64,29 @@ export default function LeituraClient({ ebook, initialPage, reader }: Props) {
   const router = useRouter();
   const [page, setPage] = useState(initialPage);
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [theme, setTheme] = useState<Theme>("light");
-  const [fsize, setFsize] = useState<FontSize>("md");
+  // Lazy readers do localStorage — rodam uma vez no client (SSR já passou)
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "light";
+    return (localStorage.getItem("pl-reader-theme") as Theme | null) ?? "light";
+  });
+  const [fsize, setFsize] = useState<FontSize>(() => {
+    if (typeof window === "undefined") return "md";
+    return (localStorage.getItem("pl-reader-fsize") as FontSize | null) ?? "md";
+  });
   const [aaOpen, setAaOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
+    if (typeof window === "undefined") return [];
+    const saved = localStorage.getItem(`pl-bookmarks-${ebook.id}`);
+    try {
+      return saved ? (JSON.parse(saved) as Bookmark[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [toast, setToast] = useState<string | null>(null);
   const [turning, setTurning] = useState<"next" | "prev" | null>(null);
   const progressSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,17 +106,11 @@ export default function LeituraClient({ ebook, initialPage, reader }: Props) {
   // #4 selected text for quote sharing
   const [selectedQuote, setSelectedQuote] = useState("");
 
-  // Load bookmarks and apply reader body class
+  // Apply reader body class (separado da leitura do localStorage que foi pra useState lazy)
   useEffect(() => {
-    const saved = localStorage.getItem(`pl-bookmarks-${ebook.id}`);
-    if (saved) setBookmarks(JSON.parse(saved));
-    const savedTheme = localStorage.getItem("pl-reader-theme") as Theme | null;
-    const savedFsize = localStorage.getItem("pl-reader-fsize") as FontSize | null;
-    if (savedTheme) setTheme(savedTheme);
-    if (savedFsize) setFsize(savedFsize);
     document.body.classList.add("reader");
     return () => { document.body.classList.remove("reader"); };
-  }, [ebook.id]);
+  }, []);
 
   useEffect(() => { localStorage.setItem("pl-reader-theme", theme); }, [theme]);
   useEffect(() => { localStorage.setItem("pl-reader-fsize", fsize); }, [fsize]);

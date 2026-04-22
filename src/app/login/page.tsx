@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import LoginForm from "./_components/LoginForm";
 import FirstAccessWizard from "./_components/FirstAccessWizard";
 import ForgotPasswordForm from "./_components/ForgotPasswordForm";
@@ -11,6 +11,7 @@ import LoginLayout from "./_components/LoginLayout";
 type Flow = "login" | "first-access" | "forgot" | "blocked";
 
 function LoginPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const stepParam = searchParams.get("step");
 
@@ -23,23 +24,22 @@ function LoginPageInner() {
 
   const [flow, setFlow] = useState<Flow>(initialFlow);
   const [initialPassword, setInitialPassword] = useState("");
-  const [blockedInfo, setBlockedInfo] = useState<{ cnpj?: string; releaseAt?: number }>({});
-
-  useEffect(() => {
+  // releaseAt derivado do URL em lazy initializer — Date.now() roda uma vez no mount
+  const [blockedInfo, setBlockedInfo] = useState<{ cnpj?: string; releaseAt: number }>(() => {
     if (stepParam === "err-bloq" || stepParam === "blocked") {
-      setFlow("blocked");
-      setBlockedInfo({
+      return {
         cnpj: searchParams.get("cnpj") ?? undefined,
-        releaseAt: Date.now() + 15 * 60 * 1000, // 15 min from now
-      });
+        releaseAt: Date.now() + 15 * 60 * 1000,
+      };
     }
-  }, [stepParam, searchParams]);
+    return { releaseAt: 0 };
+  });
 
   if (flow === "blocked") {
     return (
       <BlockedAccount
         cnpj={blockedInfo.cnpj}
-        releaseAt={blockedInfo.releaseAt ?? Date.now() + 15 * 60 * 1000}
+        releaseAt={blockedInfo.releaseAt}
         onRecover={() => setFlow("forgot")}
         onBack={() => setFlow("login")}
       />
@@ -51,7 +51,7 @@ function LoginPageInner() {
       <LoginLayout>
         <FirstAccessWizard
           initialPassword={initialPassword}
-          onComplete={() => { window.location.href = "/vitrine"; }}
+          onComplete={() => { router.push("/vitrine"); }}
           onBack={() => setFlow("login")}
         />
       </LoginLayout>
@@ -72,7 +72,7 @@ function LoginPageInner() {
             setInitialPassword(password);
             setFlow("first-access");
           } else {
-            window.location.href = "/vitrine";
+            router.push("/vitrine");
           }
         }}
         onForgotPassword={() => setFlow("forgot")}

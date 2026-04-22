@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, verifyToken } from "@/lib/auth";
+import { checkInviteRateLimit, getRateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const { allowed, resetAt } = checkInviteRateLimit(request);
+  if (!allowed) return getRateLimitResponse(resetAt);
+
   try {
     const { token, newPassword } = await request.json();
 
