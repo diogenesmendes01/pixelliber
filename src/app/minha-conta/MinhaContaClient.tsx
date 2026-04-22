@@ -8,12 +8,21 @@ interface User {
   name: string | null;
   email: string | null;
   role: string;
+  twoFaEnabled: boolean;
+  notifSettings: string | null;
   assinaturaAtiva: boolean;
   company: {
     name: string;
     cnpj: string | null;
     statusAssinatura: string;
   } | null;
+}
+
+const DEFAULT_NOTIF = { novosLivros: true, equipe: true, plano: true, dicas: false };
+
+function parseNotif(raw: string | null): typeof DEFAULT_NOTIF {
+  try { return { ...DEFAULT_NOTIF, ...JSON.parse(raw ?? "{}") }; }
+  catch { return DEFAULT_NOTIF; }
 }
 
 interface Props {
@@ -44,7 +53,8 @@ function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
 export default function MinhaContaClient({ user, isAdmin }: Props) {
   const [toast, setToast] = useState("");
   const [pwFormOpen, setPwFormOpen] = useState(false);
-  const [twoFA, setTwoFA] = useState(false);
+  const [twoFA, setTwoFA] = useState(user.twoFaEnabled);
+  const [notif, setNotif] = useState(parseNotif(user.notifSettings));
 
   // Profile form state
   const [name, setName] = useState(user.name ?? "");
@@ -246,7 +256,16 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
             </div>
             <div
               className={`toggle${twoFA ? " on" : ""}`}
-              onClick={() => { setTwoFA((v) => !v); setToast(twoFA ? "2FA desativado" : "2FA ativado"); }}
+              onClick={async () => {
+                const next = !twoFA;
+                setTwoFA(next);
+                await fetch("/api/users/settings", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ twoFaEnabled: next }),
+                });
+                setToast(next ? "2FA ativado" : "2FA desativado");
+              }}
             />
           </div>
         </div>
@@ -255,13 +274,28 @@ export default function MinhaContaClient({ user, isAdmin }: Props) {
         <div className="card-block">
           <h3>Notificações</h3>
           <div className="card-sub">O que você quer receber por e-mail.</div>
-          {[
-            { label: "Novos livros adicionados", desc: "Resumo semanal das novidades.", on: true },
-            { label: "Atividade da equipe", desc: "Convites aceitos, novos acessos (só admins).", on: true },
-            { label: "Aviso de plano expirando", desc: "15, 7 e 1 dia antes do vencimento.", on: true },
-            { label: "Dicas e recomendações", desc: "Sugestões curadas com base na leitura.", on: false },
-          ].map((n, i) => (
-            <NotifRow key={i} label={n.label} desc={n.desc} defaultOn={n.on} onToggle={(v) => setToast(`${n.label}: ${v ? "ativado" : "desativado"}`)} />
+          {([
+            { key: "novosLivros", label: "Novos livros adicionados", desc: "Resumo semanal das novidades." },
+            { key: "equipe", label: "Atividade da equipe", desc: "Convites aceitos, novos acessos (só admins)." },
+            { key: "plano", label: "Aviso de plano expirando", desc: "15, 7 e 1 dia antes do vencimento." },
+            { key: "dicas", label: "Dicas e recomendações", desc: "Sugestões curadas com base na leitura." },
+          ] as const).map((n) => (
+            <NotifRow
+              key={n.key}
+              label={n.label}
+              desc={n.desc}
+              defaultOn={notif[n.key]}
+              onToggle={async (v) => {
+                const next = { ...notif, [n.key]: v };
+                setNotif(next);
+                await fetch("/api/users/settings", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ notifSettings: next }),
+                });
+                setToast(`${n.label}: ${v ? "ativado" : "desativado"}`);
+              }}
+            />
           ))}
         </div>
 

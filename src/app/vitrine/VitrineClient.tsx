@@ -4,6 +4,20 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 
+interface ReadingHistoryItem {
+  id: string;
+  progressPct: number;
+  lastPage: number;
+  lastReadAt: string;
+  ebook: {
+    id: string;
+    titulo: string;
+    autor: string | null;
+    categoria: string | null;
+    tags: string | null;
+  };
+}
+
 interface SessionUser {
   name: string | null;
   companyName: string | null;
@@ -82,11 +96,64 @@ function BookSkeleton({ small }: { small?: boolean }) {
   );
 }
 
+function ContinueCard({ item }: { item: ReadingHistoryItem }) {
+  const { hue, label } = (() => {
+    try {
+      const t = JSON.parse(item.ebook.tags ?? "{}");
+      return { hue: t.hue ?? 38, label: t.label ?? "geral" };
+    } catch {
+      return { hue: 38, label: "geral" };
+    }
+  })();
+
+  return (
+    <Link href={`/vitrine/${item.ebook.id}`} className="continue-card" style={{ textDecoration: "none" }}>
+      <div
+        className="cover"
+        style={{ background: coverBg(hue), width: 90, flexShrink: 0, aspectRatio: "3/4" }}
+      >
+        <span className="cover-tag">{label}</span>
+        <span>
+          <span className="cover-title" style={{ fontSize: 11 }}>{item.ebook.titulo}</span>
+        </span>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "var(--serif)", fontWeight: 500, fontSize: 14, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {item.ebook.titulo}
+        </div>
+        {item.ebook.autor && (
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>por {item.ebook.autor}</div>
+        )}
+        <div style={{ background: "var(--line-ink)", borderRadius: 4, height: 4, overflow: "hidden" }}>
+          <div style={{ background: "var(--gold)", height: "100%", width: `${Math.min(item.progressPct, 100)}%`, borderRadius: 4 }} />
+        </div>
+        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+          {Math.round(item.progressPct)}% lido
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function ContinueCardSkeleton() {
+  return (
+    <div className="continue-card">
+      <div className="cover skel" style={{ width: 90, flexShrink: 0, aspectRatio: "3/4" }} />
+      <div style={{ flex: 1 }}>
+        <div className="skel" style={{ height: 14, borderRadius: 4, marginBottom: 8, width: "60%" }} />
+        <div className="skel" style={{ height: 4, borderRadius: 4, width: "100%" }} />
+      </div>
+    </div>
+  );
+}
+
 export default function VitrineClient({ user }: { user: SessionUser }) {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCat, setActiveCat] = useState("Todos");
   const [query, setQuery] = useState("");
+  const [history, setHistory] = useState<ReadingHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   useEffect(() => {
     async function fetchBooks() {
@@ -104,6 +171,24 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
       }
     }
     fetchBooks();
+  }, []);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      setHistoryLoading(true);
+      try {
+        const res = await fetch("/api/reading-history");
+        if (res.ok) {
+          const data = await res.json();
+          setHistory(data.history as ReadingHistoryItem[]);
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+    fetchHistory();
   }, []);
 
   const filtered = useMemo(() => {
@@ -163,6 +248,20 @@ export default function VitrineClient({ user }: { user: SessionUser }) {
             ))}
           </div>
         </section>
+
+        {/* Continuar lendo */}
+        {!query && activeCat === "Todos" && (historyLoading || history.length > 0) && (
+          <section className="section" style={{ paddingTop: 0 }}>
+            <div className="section-head">
+              <h2 className="serif" style={{ fontSize: "var(--h3)" }}>Continuar lendo</h2>
+            </div>
+            <div className="continue-grid">
+              {historyLoading
+                ? Array.from({ length: 3 }).map((_, i) => <ContinueCardSkeleton key={i} />)
+                : history.map((item) => <ContinueCard key={item.id} item={item} />)}
+            </div>
+          </section>
+        )}
 
         {/* Mais lidos */}
         {!query && activeCat === "Todos" && (

@@ -14,6 +14,8 @@ async function getUserData(userId: string) {
     name: user.name,
     email: user.email,
     role: user.role,
+    twoFaEnabled: user.twoFaEnabled,
+    notifSettings: user.notifSettings,
     assinaturaAtiva: user.company?.statusAssinatura === "ativa",
     company: user.company
       ? {

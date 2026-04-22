@@ -23,18 +23,21 @@ model Company {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String?   @unique
-  passwordHash String
-  name         String?
-  role         String    @default("USER")
-  lastLoginAt  DateTime?
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  companyId    String?   @unique
-  company      Company?  @relation(fields: [companyId], references: [id])
-  employee     Employee?
+  id             String           @id @default(cuid())
+  email          String?          @unique
+  passwordHash   String
+  name           String?
+  role           String           @default("USER")
+  lastLoginAt    DateTime?
+  isActive       Boolean          @default(true)
+  twoFaEnabled   Boolean          @default(false)
+  notifSettings  String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  companyId      String?          @unique
+  company        Company?         @relation(fields: [companyId], references: [id])
+  employee       Employee?
+  readingHistory ReadingHistory[]
 }
 
 model Employee {
@@ -53,16 +56,31 @@ model Employee {
 }
 
 model Ebook {
-  id                  String   @id @default(cuid())
-  titulo              String
-  autor               String?
-  descricao           String?
-  capa                String?
-  pdf                 String?
-  categoria           String?
-  tags                String?
-  contadorDownloads   Int      @default(0)
-  createdAt           DateTime @default(now())
-  companyId           String?
-  company             Company? @relation(fields: [companyId], references: [id])
+  id                String         @id @default(cuid())
+  titulo            String
+  autor             String?
+  descricao         String?
+  capa              String?
+  pdf               String?
+  categoria         String?
+  tags              String?
+  contadorDownloads Int            @default(0)
+  createdAt         DateTime       @default(now())
+  companyId         String?
+  company           Company?       @relation(fields: [companyId], references: [id])
+  readingHistory    ReadingHistory[]
+}
+
+model ReadingHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  ebookId     String
+  progressPct Float    @default(0)
+  lastPage    Int      @default(0)
+  lastReadAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  ebook       Ebook    @relation(fields: [ebookId], references: [id])
+
+  @@unique([userId, ebookId])
 }
